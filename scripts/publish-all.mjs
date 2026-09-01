@@ -28,8 +28,29 @@ import { fileURLToPath } from "node:url";
 import { execFileSync, execSync } from "node:child_process";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const otp = process.argv[2];
+
+/**
+ * Accept `123456` or `--otp=123456`, and reject anything else BEFORE building.
+ *
+ * The first version took a bare argument and passed whatever it got straight to
+ * npm. A mistyped `--opt=` therefore ran a full build, the whole test suite and
+ * the secrets scan, and only then got rejected by the registry for not being
+ * digits. Validating here turns a two-minute round trip into an instant one.
+ */
+const raw = process.argv[2];
+const otp = raw?.startsWith("--otp=") ? raw.slice("--otp=".length) : raw;
 const dryRun = !otp;
+
+if (otp !== undefined && !/^\d{6,}$/.test(otp)) {
+  console.error(
+    `\n"${raw}" is not a one-time password.\n\n` +
+      `Pass the digits your authenticator shows for npm, as the first argument:\n\n` +
+      `  node scripts/publish-all.mjs 123456\n` +
+      `  node scripts/publish-all.mjs --otp=123456\n\n` +
+      `Run it with no argument to see what would publish.\n`,
+  );
+  process.exit(1);
+}
 
 const packagesDir = join(root, "packages");
 const packages = readdirSync(packagesDir)
