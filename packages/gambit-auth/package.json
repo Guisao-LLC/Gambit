@@ -20,7 +20,7 @@
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "node --test test/*.test.js",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
   },
   "peerDependencies": {
     "express": "^4.21.0",
@@ -31,7 +31,14 @@
     "@types/jsonwebtoken": "^9.0.7"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
-  }
+    "access": "public"
+  },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-auth",
+  "keywords": [
+    "express",
+    "jwt",
+    "authentication",
+    "middleware",
+    "http-error"
+  ]
 }

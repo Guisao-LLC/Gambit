@@ -38,9 +38,10 @@ export interface AuthenticateConfig<TClaims> {
 }
 
 /**
- * The host app declares what `req.user` IS — Time2Drive's `types/express.d.ts`
- * types it as its own decoded token, another app will type it as something
- * else. This package must therefore write the property WITHOUT declaring it.
+ * The host app declares what `req.user` IS — one app's `types/express.d.ts`
+ * types it as its own decoded token, another types it as something else
+ * entirely. This package must therefore write the property WITHOUT declaring
+ * it.
  *
  * Shipping a `declare global { namespace Express { interface Request { user } } }`
  * from here would be worse than the cast below: two packages augmenting the

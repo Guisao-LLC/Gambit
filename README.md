@@ -25,30 +25,43 @@ because everything else needs it.
 
 ## Install
 
-Packages publish to **GitHub Packages**, not npmjs. A consuming app needs two
-things.
-
-An `.npmrc` telling npm where the scope lives:
-
-```
-@guisao-llc:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-```
-
-And `NODE_AUTH_TOKEN` in the environment — a PAT with `read:packages` to
-install, `write:packages` to publish.
-
-> **This bites at deploy time, not at your desk.** Render runs `npm ci` in a
-> clean container with no token unless you put one there. Add `NODE_AUTH_TOKEN`
-> to the service environment for **every** app that consumes Gambit, before the
-> first deploy that depends on it — otherwise the build fails at install and the
-> error will not obviously be about a token.
-
-Then:
-
 ```bash
 npm install @guisao-llc/gambit-auth
 ```
+
+That is the whole of it. Public packages on the public registry: no `.npmrc`,
+no token, no registry configuration, nothing to add to a deploy environment.
+
+That is a deliberate choice rather than an accident. The first plan put these in
+GitHub Packages, which would have meant a `read:packages` token in every
+consuming app's build environment — and that cost lands at deploy time, in a
+clean container, as an install failure whose error message never mentions
+tokens. There is nothing in here worth protecting: it is authentication,
+authorization and mail plumbing. The value being kept private lives in the apps
+that consume it, and stays there.
+
+## Publishing
+
+```bash
+npm publish --workspace @guisao-llc/gambit-auth
+```
+
+`prepublishOnly` builds, runs the tests, and then runs `scripts/prepublish-check.mjs`
+against the files that will actually ship. That last gate exists because npm
+restricts unpublishing after 72 hours, so a leaked secret is public forever. It
+refuses to publish on:
+
+- an email address (`example.com` excepted — that is what docs are for)
+- a private key block, AWS key id, GitHub or Slack token
+- an assigned secret/password/token literal
+- a connection string carrying credentials
+- **app vocabulary** — a package naming a specific application is not a leak,
+  but it is a design failure, and shipping it publicly makes that claim to
+  strangers
+
+It scans `dist/`, not `src/`, because those are different sets: `files`
+controls what ships, and a comment stripped from source can still sit in a
+stale build.
 
 ## Working on it
 
