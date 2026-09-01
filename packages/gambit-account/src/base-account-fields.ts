@@ -13,7 +13,7 @@ import { Schema, SchemaDefinitionProperty } from "mongoose";
  * the piece those seams were pointing at.
  *
  * A schema FRAGMENT, not a base model, for the same reason `personFields` is
- * one: an account is always partly domain. Time2Drive's carries instructor
+ * one: an account is always partly domain. One app's carries instructor
  * working hours and zone coverage; a clinic's would carry something else
  * entirely. So the app spreads these into its own schema rather than inheriting
  * a model it would immediately outgrow.
@@ -46,7 +46,7 @@ import { Schema, SchemaDefinitionProperty } from "mongoose";
 /**
  * What any app in this family can assume an account has.
  *
- * Apps extend this with their own fields; `IUser` in Time2Drive adds the
+ * Apps extend this with their own fields; a consuming app adds the
  * tenant, instructor availability and zone coverage. Nothing here names a
  * tenant, because the tenant's field name is configuration.
  */
@@ -66,7 +66,7 @@ export interface BaseAccount<TAccountType extends string = string> {
    * Which kind of account this is.
    *
    * Generic in the app's own union rather than a bare `string`, so an app that
-   * knows its kinds keeps that knowledge: Time2Drive's `IUser` extends
+   * knows its kinds keeps that knowledge: a consuming app extends
    * `BaseAccount<"staff" | "student">` and its JWT claims stay narrow. An app
    * that does not care gets `string` from the default and pays nothing.
    */
@@ -115,7 +115,7 @@ export interface BaseAccountFieldsConfig {
   /**
    * The organization this account belongs to.
    *
-   * `type` is open for the same reason it is in `personFields`: Time2Drive
+   * `type` is open for the same reason it is in `personFields`: one app
    * stores `schoolId` as an ObjectId here but as a String on Student, and
    * forcing one shape would mean a migration before anything could adopt this.
    */
@@ -133,7 +133,7 @@ export interface BaseAccountFieldsConfig {
   /**
    * Whether an account must have a password.
    *
-   * Not every app requires one — magic-link-only accounts exist. Time2Drive
+   * Not every app requires one — magic-link-only accounts exist. The apps here
    * requires it today, so that is the default.
    */
   passwordRequired?: boolean;

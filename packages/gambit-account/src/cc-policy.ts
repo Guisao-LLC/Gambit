@@ -56,10 +56,10 @@ export function isPlausibleEmailAddress(value: string): boolean {
   return /^[^@,;]+@[^@,;.]+(\.[^@,;.]+)+$/.test(trimmed);
 }
 
-/** Lower-cased and trimmed, so `A@b.com` and `a@b.com` can't both be copied.
- *  Only the domain is case-insensitive per the RFC, but every provider in
- *  practice treats the local part that way too, and a duplicate copy is a worse
- *  outcome than the theoretical distinction. */
+/** Lower-cased and trimmed, so `A@example.com` and `a@example.com` cannot
+ *  both be copied. Only the domain is case-insensitive per the RFC, but every
+ *  provider in practice treats the local part that way too, and a duplicate
+ *  copy is a worse outcome than the theoretical distinction. */
 export function normalizeEmailAddress(value: string): string {
   return value.trim().toLowerCase();
 }

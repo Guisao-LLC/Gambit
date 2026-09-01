@@ -8,8 +8,8 @@
  * untestable without a database.
  *
  * Quick 260831-b7q — written for extraction. Nothing here knows about schools,
- * students, or Time2Drive, so a second app inherits the same rules rather than
- * inventing its own.
+ * students, or any one product, so a second app inherits the same rules rather
+ * than inventing its own.
  */
 
 /** Server-side floor. The User schema also declares minlength 6; this is the
