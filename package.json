@@ -1,0 +1,28 @@
+{
+  "name": "gambit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The parts of an application that are not the application: auth, RBAC, mail, people, events, and the script that starts a new one with all of it.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git"
+  },
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "rebuild": "npm run clean && npm run build",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "tsc --build --dry"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.2"
+  }
+}

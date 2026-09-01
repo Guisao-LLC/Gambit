@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Never commit a registry token. .npmrc here reads it from the environment
+# (see README), but a local override must not be tracked.
+.npmrc.local
+.env
+.env.*
+!.env.example
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

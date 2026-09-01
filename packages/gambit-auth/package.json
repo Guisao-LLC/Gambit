@@ -1,0 +1,37 @@
+{
+  "name": "@guisao-llc/gambit-auth",
+  "version": "0.1.0",
+  "description": "Token verification, request authentication, and the HTTP error type the rest of Gambit throws.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git",
+    "directory": "packages/gambit-auth"
+  },
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "peerDependencies": {
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
+}
