@@ -163,6 +163,29 @@ for (const pkg of pending) {
     );
     console.log(web ? `✓ ${name}@${version} published` : "ok");
   } catch (err) {
+    /**
+     * npm can report a failure for a publish that WORKED.
+     *
+     * In the browser-auth flow it uploads, gets a 401 asking for the second
+     * factor, waits for you to approve, then retries the same upload — which
+     * the registry rejects with "you cannot publish over the previously
+     * published versions". The first attempt had already landed. Reading that
+     * as a failure sent someone hunting for a package that was published the
+     * whole time.
+     *
+     * So ask the registry rather than trusting the exit code. It is the only
+     * authority on whether the version exists, and it costs one request on a
+     * path that has already failed once.
+     */
+    if (isPublished(pkg.manifest)) {
+      console.log(
+        web
+          ? `✓ ${name}@${version} published (npm reported an error for a retry of its own upload)`
+          : "ok (npm reported an error for a retry of its own upload)",
+      );
+      continue;
+    }
+
     console.log(web ? `\n✗ ${name}@${version} failed` : "FAILED\n");
     if (!web) console.error(String(err.stdout ?? "") + String(err.stderr ?? ""));
     console.error(
