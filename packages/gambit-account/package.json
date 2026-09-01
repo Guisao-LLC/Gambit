@@ -1,0 +1,21 @@
+{
+  "name": "@guisao-llc/gambit-account",
+  "version": "0.1.0",
+  "description": "The account record, and the rules behind a profile page: password policy, avatar validation, and email-copy recipients.",
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "git+https://github.com/Guisao-LLC/Gambit.git", "directory": "packages/gambit-account" },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-account",
+  "keywords": ["account", "profile", "password", "avatar", "mongoose"],
+  "engines": { "node": ">=20 <23" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "peerDependencies": { "mongoose": ">=8" },
+  "publishConfig": { "access": "public" }
+}

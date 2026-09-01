@@ -9,6 +9,12 @@
     },
     {
       "path": "packages/gambit-rbac"
+    },
+    {
+      "path": "packages/gambit-account"
+    },
+    {
+      "path": "packages/gambit-settings"
     }
   ]
 }

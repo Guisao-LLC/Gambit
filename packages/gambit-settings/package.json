@@ -1,0 +1,21 @@
+{
+  "name": "@guisao-llc/gambit-settings",
+  "version": "0.1.0",
+  "description": "A settings document there is exactly one of: fixed-key lookup, upsert-on-read, and an audit trail.",
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "git+https://github.com/Guisao-LLC/Gambit.git", "directory": "packages/gambit-settings" },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-settings",
+  "keywords": ["settings", "singleton", "mongoose", "configuration"],
+  "engines": { "node": ">=20 <23" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "peerDependencies": { "mongoose": ">=8" },
+  "publishConfig": { "access": "public" }
+}
