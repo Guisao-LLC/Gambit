@@ -38,16 +38,30 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
  * digits. Validating here turns a two-minute round trip into an instant one.
  */
 const raw = process.argv[2];
-const otp = raw?.startsWith("--otp=") ? raw.slice("--otp=".length) : raw;
-const dryRun = !otp;
 
-if (otp !== undefined && !/^\d{6,}$/.test(otp)) {
+/**
+ * Browser auth instead of an authenticator code.
+ *
+ * npm can authenticate a publish through the browser — it prints a URL, waits,
+ * and completes once you have signed in. But it can only do that when it OWNS
+ * the terminal. The first version of this script captured npm's output with
+ * `stdio: "pipe"` to build a tidy one-line-per-package log, which silently
+ * removed that option and left an authenticator code as the only way through.
+ *
+ * So `--web` hands the terminal over. The output is noisier, because it is
+ * npm's rather than ours, and that is the trade.
+ */
+const web = raw === "--web";
+const otp = !web && raw?.startsWith("--otp=") ? raw.slice("--otp=".length) : web ? undefined : raw;
+const dryRun = !web && !otp;
+
+if (!web && otp !== undefined && !/^\d{6,}$/.test(otp)) {
   console.error(
     `\n"${raw}" is not a one-time password.\n\n` +
-      `Pass the digits your authenticator shows for npm, as the first argument:\n\n` +
-      `  node scripts/publish-all.mjs 123456\n` +
-      `  node scripts/publish-all.mjs --otp=123456\n\n` +
-      `Run it with no argument to see what would publish.\n`,
+      `  node scripts/publish-all.mjs --web       authenticate in the browser\n` +
+      `  node scripts/publish-all.mjs 123456      a code from an authenticator app\n` +
+      `  node scripts/publish-all.mjs             show what would publish\n\n` +
+      `Use --web if your npm 2FA is a passkey — a passkey produces no code to type.\n`,
   );
   process.exit(1);
 }
@@ -113,26 +127,44 @@ if (!pending.length) {
 
 if (dryRun) {
   console.log(
-    `\n${pending.length} package(s) would publish. Re-run with an OTP from your` +
-      ` authenticator:\n\n  node scripts/publish-all.mjs 123456\n`,
+    `\n${pending.length} package(s) would publish. Re-run one of these:\n\n` +
+      `  node scripts/publish-all.mjs --web       authenticate in the browser\n` +
+      `  node scripts/publish-all.mjs 123456      a code from an authenticator app\n\n` +
+      `Use --web if your npm 2FA is a passkey — a passkey produces no code to type.\n`,
   );
   process.exit(0);
+}
+
+if (web) {
+  console.log(
+    "\nnpm will print a URL for each package and wait while you authenticate.\n" +
+      "Open it, approve, and it continues on its own.\n",
+  );
 }
 
 console.log("");
 for (const pkg of pending) {
   const { name, version } = pkg.manifest;
-  process.stdout.write(`publishing ${name}@${version} ... `);
+  // In web mode npm owns the terminal, so it prints its own progress and a
+  // "publishing ..." prefix from us would just land mid-stream.
+  if (!web) process.stdout.write(`publishing ${name}@${version} ... `);
+  else console.log(`── ${name}@${version} ──`);
+
   try {
     execFileSync(
       "npm",
-      ["publish", "--workspace", name, `--otp=${otp}`],
-      { cwd: root, stdio: "pipe", shell: process.platform === "win32" },
+      ["publish", "--workspace", name, ...(otp ? [`--otp=${otp}`] : [])],
+      {
+        cwd: root,
+        // inherit lets npm prompt and open a browser; pipe keeps our log tidy.
+        stdio: web ? "inherit" : "pipe",
+        shell: process.platform === "win32",
+      },
     );
-    console.log("ok");
+    console.log(web ? `✓ ${name}@${version} published` : "ok");
   } catch (err) {
-    console.log("FAILED\n");
-    console.error(String(err.stdout ?? "") + String(err.stderr ?? ""));
+    console.log(web ? `\n✗ ${name}@${version} failed` : "FAILED\n");
+    if (!web) console.error(String(err.stdout ?? "") + String(err.stderr ?? ""));
     console.error(
       `\nStopped at ${name}. Nothing after it was published — anything later` +
         ` depends on this, and a package whose dependency is missing is worse` +

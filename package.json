@@ -20,7 +20,7 @@
     "rebuild": "npm run clean && npm run build",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "tsc --build --dry",
-    "release": "node scripts/publish-all.mjs"
+    "release": "node scripts/publish-all.mjs --web"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
