@@ -1,6 +1,14 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/gambit-auth" }
+    {
+      "path": "packages/gambit-auth"
+    },
+    {
+      "path": "packages/gambit-cascade"
+    },
+    {
+      "path": "packages/gambit-rbac"
+    }
   ]
 }

@@ -1,0 +1,35 @@
+{
+  "name": "@guisao-llc/gambit-rbac",
+  "version": "0.1.0",
+  "description": "Roles, permissions, a permission cache, and the express middleware that enforces them.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git",
+    "directory": "packages/gambit-rbac"
+  },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-rbac",
+  "keywords": ["rbac", "permissions", "authorization", "express", "middleware"],
+  "engines": { "node": ">=20 <23" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "dependencies": {
+    "@guisao-llc/gambit-auth": "^0.1.0",
+    "@guisao-llc/gambit-cascade": "^0.1.0"
+  },
+  "peerDependencies": {
+    "express": "^4.21.0",
+    "mongoose": ">=8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  },
+  "publishConfig": { "access": "public" }
+}

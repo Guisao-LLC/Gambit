@@ -1,0 +1,39 @@
+{
+  "name": "@guisao-llc/gambit-cascade",
+  "version": "0.1.0",
+  "description": "Sequential cascading deletion for databases without foreign keys.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git",
+    "directory": "packages/gambit-cascade"
+  },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-cascade",
+  "keywords": [
+    "mongodb",
+    "mongoose",
+    "cascade",
+    "delete",
+    "referential-integrity"
+  ],
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "peerDependencies": {
+    "mongoose": ">=8"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
