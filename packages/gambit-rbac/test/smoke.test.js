@@ -326,3 +326,78 @@ test("permission deletion purges the key from roles before deleting it", async (
   await buildPermissionDeletion({ roleModel, permissionModel }).execute("courses:manage");
   assert.deepEqual(order, ["purge", "delete"]);
 });
+
+// ── super roles ──────────────────────────────────────────────────────────────
+
+test("no bypass by default — isGlobal alone grants nothing", async () => {
+  // The important default. One consuming app uses isGlobal to mean "not scoped
+  // to a tenant", with no elevated rights. If this package interpreted the flag
+  // on its own, that app's ordinary roles would silently become superusers.
+  _seedCacheForTesting({ Global: { permissions: [], isGlobal: true } });
+  const { authorize } = createAuthorize({ verifyToken: claimsFor("Global") });
+  assert.equal((await run(authorize("a:write"), withAuth())).code, 403);
+});
+
+test("an app that opts in gets the bypass it asked for", async () => {
+  _seedCacheForTesting({ Global: { permissions: [], isGlobal: true } });
+  const { authorize, authorizeAny } = createAuthorize({
+    verifyToken: claimsFor("Global"),
+    isSuperRole: (role) => role?.isGlobal === true,
+  });
+  assert.equal(await run(authorize("a:write"), withAuth()), undefined);
+  assert.equal(await run(authorizeAny(["x:read", "y:read"]), withAuth()), undefined);
+});
+
+test("the bypass is per-role, not global", async () => {
+  _seedCacheForTesting({
+    Global: { permissions: [], isGlobal: true },
+    Clerk: { permissions: [], isGlobal: false },
+  });
+  const build = (roles) =>
+    createAuthorize({
+      verifyToken: claimsFor(roles),
+      isSuperRole: (role) => role?.isGlobal === true,
+    }).authorize("a:write");
+
+  assert.equal(await run(build("Global"), withAuth()), undefined);
+  assert.equal((await run(build("Clerk"), withAuth())).code, 403);
+});
+
+test("a super role still faces the entitlement check", async () => {
+  // Separate layers on purpose: exempt from PERMISSION checks does not mean
+  // the tenant has paid for the feature. Collapsing them would make one flag
+  // quietly do two jobs.
+  const { HttpError } = require("@guisao-llc/gambit-auth");
+  _seedCacheForTesting({ Global: { permissions: [], isGlobal: true } });
+  const { authorize } = createAuthorize({
+    verifyToken: claimsFor("Global"),
+    isSuperRole: (role) => role?.isGlobal === true,
+    checkEntitlement: () => new HttpError("Feature not enabled", 403),
+  });
+  const err = await run(authorize("a:write"), withAuth());
+  assert.equal(err.code, 403);
+  assert.equal(err.message, "Feature not enabled");
+});
+
+test("a super role's entitlement is priced on the requirement", async () => {
+  _seedCacheForTesting({ Global: { permissions: [], isGlobal: true } });
+  let seen;
+  const { authorizeAny } = createAuthorize({
+    verifyToken: claimsFor("Global"),
+    isSuperRole: () => true,
+    checkEntitlement: (ctx) => {
+      seen = ctx.matched;
+      return null;
+    },
+  });
+  await run(authorizeAny(["a:read", "b:read"]), withAuth());
+  // It holds nothing, so "what it held" would be empty and price nothing.
+  assert.deepEqual(seen, ["a:read", "b:read"]);
+});
+
+test("the cache carries isGlobal through without interpreting it", () => {
+  _seedCacheForTesting({ A: { permissions: [], isGlobal: true } });
+  assert.equal(getCachedRole("A").isGlobal, true);
+  _seedCacheForTesting({ B: ["x:read"] });
+  assert.equal(getCachedRole("B").isGlobal, false, "defaults false, never undefined");
+});

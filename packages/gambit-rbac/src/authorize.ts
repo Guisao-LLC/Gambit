@@ -53,6 +53,29 @@ export interface AuthorizeConfig<TClaims extends AuthClaims> {
    * way anyone ends up able to read invoices at all.
    */
   readImpliesGroupAccess?: boolean;
+  /**
+   * A role that passes every permission check.
+   *
+   * Defaults to NEVER, and that default is the important part. One consuming
+   * app marks such roles with `isGlobal`; the other app has an `isGlobal` flag
+   * too and means something completely different by it — a role that is not
+   * scoped to a single tenant, with no elevated rights at all. If this package
+   * assumed either meaning, the other app's ordinary roles would silently
+   * become superusers.
+   *
+   * So the flag is transported on `CachedRole` and interpreted only here, by
+   * the app that knows what it means:
+   *
+   *   isSuperRole: (role) => role?.isGlobal === true
+   *
+   * An app that says nothing gets no bypass, which is the safe direction to be
+   * wrong in.
+   *
+   * The entitlement check still runs afterwards. These are separate layers: a
+   * role exempt from PERMISSION checks has not necessarily paid for the
+   * feature, and collapsing the two would make one flag quietly do two jobs.
+   */
+  isSuperRole?: (role: CachedRole | undefined, roleName: string) => boolean;
 }
 
 /** Any permission in the same group satisfies a `:read` requirement. */
@@ -76,7 +99,12 @@ function hasGroupAccess(roleName: string, permission: string): boolean {
 export function createAuthorize<TClaims extends AuthClaims>(
   config: AuthorizeConfig<TClaims>,
 ) {
-  const { verifyToken, checkEntitlement, readImpliesGroupAccess = false } = config;
+  const {
+    verifyToken,
+    checkEntitlement,
+    readImpliesGroupAccess = false,
+    isSuperRole = () => false,
+  } = config;
 
   /**
    * Everything the two guards share: header presence, verification, claims,
@@ -107,7 +135,11 @@ export function createAuthorize<TClaims extends AuthClaims>(
           return next(new HttpError("No role assigned to this user", 403));
         }
 
-        const matched = match(roleName);
+        // A super role skips the permission check entirely — but NOT the
+        // entitlement check below, which is a separate question.
+        const matched = isSuperRole(getCachedRole(roleName), roleName)
+          ? required
+          : match(roleName);
         if (!matched) {
           return next(
             new HttpError("You do not have permission to perform this action", 403),

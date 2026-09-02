@@ -21,6 +21,18 @@
 export interface CachedRole {
   permissions: Set<string>;
   bypassFeatureChecks: boolean;
+  /**
+   * Carried through from the role record, and deliberately UNINTERPRETED here.
+   *
+   * The two apps this was extracted from both have this flag and mean
+   * different things by it: in one it marks a role that is not scoped to a
+   * single tenant; in the other it marks a role that bypasses every permission
+   * check. A package that picked either meaning would silently break the app
+   * that meant the other, so this layer only transports it — see
+   * `isSuperRole` in `createAuthorize`, which is where an app says what it
+   * means.
+   */
+  isGlobal: boolean;
 }
 
 /** The shape `loadRoles` must return. Anything else about a role is the app's. */
@@ -28,6 +40,7 @@ export interface LoadedRole {
   name: string;
   permissions: string[];
   bypassFeatureChecks?: boolean;
+  isGlobal?: boolean;
 }
 
 export interface PermissionCacheConfig {
@@ -104,6 +117,7 @@ export async function refreshCache(): Promise<void> {
     _cache.set(role.name, {
       permissions: new Set(role.permissions),
       bypassFeatureChecks: role.bypassFeatureChecks ?? false,
+      isGlobal: role.isGlobal ?? false,
     });
   }
   _config.onRefresh?.(roles.length);
@@ -119,7 +133,8 @@ export async function refreshCache(): Promise<void> {
 export function _seedCacheForTesting(
   entries: Record<
     string,
-    string[] | { permissions: string[]; bypassFeatureChecks: boolean }
+    | string[]
+    | { permissions: string[]; bypassFeatureChecks?: boolean; isGlobal?: boolean }
   >,
 ): void {
   _cache.clear();
@@ -127,10 +142,11 @@ export function _seedCacheForTesting(
     _cache.set(
       role,
       Array.isArray(value)
-        ? { permissions: new Set(value), bypassFeatureChecks: false }
+        ? { permissions: new Set(value), bypassFeatureChecks: false, isGlobal: false }
         : {
             permissions: new Set(value.permissions),
-            bypassFeatureChecks: value.bypassFeatureChecks,
+            bypassFeatureChecks: value.bypassFeatureChecks ?? false,
+            isGlobal: value.isGlobal ?? false,
           },
     );
   }
