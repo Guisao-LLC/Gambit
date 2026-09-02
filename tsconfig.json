@@ -15,6 +15,9 @@
     },
     {
       "path": "packages/gambit-settings"
+    },
+    {
+      "path": "packages/gambit-testing"
     }
   ]
 }

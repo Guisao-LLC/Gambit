@@ -1,0 +1,20 @@
+{
+  "name": "@guisao-llc/gambit-testing",
+  "version": "0.1.0",
+  "description": "The half of an authorization test suite that is the same in every app: assertions, a route manifest, and a per-permission grid generator.",
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "git+https://github.com/Guisao-LLC/Gambit.git", "directory": "packages/gambit-testing" },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-testing",
+  "keywords": ["testing", "rbac", "authorization", "supertest", "jest", "vitest"],
+  "engines": { "node": ">=20 <23" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "publishConfig": { "access": "public" }
+}
