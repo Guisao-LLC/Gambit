@@ -64,6 +64,23 @@ export interface PermissionGridConfig {
   allFeatureKeys?: readonly string[];
   /** Routes to skip, e.g. a router that is not mounted in the test app. */
   skipRoute?: (route: RouteEntry) => boolean;
+  /**
+   * Skip only the FEATURE-DISABLED assertion for these routes.
+   *
+   * For a route behind a composed gate whose alternate branch returns before
+   * the entitlement layer runs, that assertion cannot pass and is not
+   * describing a bug. Narrower than skipRoute on purpose: the permission
+   * assertions still apply, and a carve-out that silently dropped all four
+   * would hide far more than it explained.
+   */
+  skipFeatureDenial?: (route: RouteEntry) => boolean;
+  /**
+   * Messages the app's own gates emit — its entitlement layer, typically.
+   *
+   * Without these an entitlement 403 is classified as a downstream business
+   * rule, so an ALLOW test passes on a request that was refused.
+   */
+  denyMessages?: readonly string[];
   /** Header used to carry the token. Defaults to a bearer Authorization. */
   authHeader?: () => [string, string];
 }
@@ -106,6 +123,8 @@ export function buildPermissionGrid(config: PermissionGridConfig): void {
     readImpliesGroupAccess,
     allFeatureKeys = [],
     skipRoute = () => false,
+    skipFeatureDenial = () => false,
+    denyMessages = [],
     authHeader = () => ["Authorization", "Bearer test-token"],
   } = config;
 
@@ -142,7 +161,10 @@ export function buildPermissionGrid(config: PermissionGridConfig): void {
             it("ALLOW: holding the permission gets past the gate", async () => {
               const app = buildApp();
               withUser({ permissions: [perm.key], features: featuresForRoute(route, perm) });
-              expectAllow(await send(app, route.sampleBody?.() ?? {}), perm.key);
+              expectAllow(await send(app, route.sampleBody?.() ?? {}), {
+                context: perm.key,
+                denyMessages,
+              });
             });
 
             it("DENY: no token is a 401", async () => {
@@ -172,11 +194,17 @@ export function buildPermissionGrid(config: PermissionGridConfig): void {
                 adjacentPerm: adjacent,
                 usesAny: route.usesAny,
                 readImpliesGroupAccess,
+                denyMessages,
                 context: `${perm.key} vs ${adjacent}`,
               });
             });
 
-            if (perm.featureKey && perm.featureKey !== "core" && allFeatureKeys.length) {
+            if (
+              perm.featureKey &&
+              perm.featureKey !== "core" &&
+              allFeatureKeys.length &&
+              !skipFeatureDenial(route)
+            ) {
               it("DENY: the feature being disabled is a 403", async () => {
                 const app = buildApp();
                 // Everything EXCEPT the key under test, so the denial is

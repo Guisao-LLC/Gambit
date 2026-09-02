@@ -48,12 +48,35 @@ function messageOf(res: HttpResponseLike): string {
  * without this it reads as a PASS. A whole grid can go green while testing
  * nothing at all.
  */
-export function expectAllow(res: HttpResponseLike, context = ""): void {
+export interface AllowOptions {
+  /** Named in the failure message, so a grid says WHICH permission failed. */
+  context?: string;
+  /**
+   * Additional messages that mean "a gate rejected this".
+   *
+   * REQUIRED for any app with an entitlement layer, and the reason is subtle
+   * enough to be worth stating: an entitlement denial is a 403 carrying an
+   * app-specific message. Without it listed here, this function classifies it
+   * as a downstream business rule and returns SUCCESSFULLY — so an ALLOW test
+   * passes on a request that was actually refused.
+   *
+   * That is the same shape as the 5xx trap below: a denial slipping through as
+   * an allow because it did not look like one.
+   */
+  denyMessages?: readonly string[];
+}
+
+export function expectAllow(
+  res: HttpResponseLike,
+  options: string | AllowOptions = {},
+): void {
+  const { context = "", denyMessages = [] } =
+    typeof options === "string" ? { context: options } : options;
   const where = context ? ` [${context}]` : "";
 
   if (res.status === 401 || res.status === 403) {
     const msg = messageOf(res);
-    if (AUTHORIZE_DENY_MESSAGES.has(msg)) {
+    if (AUTHORIZE_DENY_MESSAGES.has(msg) || denyMessages.includes(msg)) {
       throw new Error(
         `expectAllow${where}: got ${res.status} from the authorization layer ("${msg}").`,
       );
@@ -117,10 +140,17 @@ export function expectAdjacentPermOutcome(
     usesAny: boolean;
     readImpliesGroupAccess: boolean;
     context?: string;
+    denyMessages?: readonly string[];
   },
 ): void {
-  const { requiredPermissions, adjacentPerm, usesAny, readImpliesGroupAccess, context } =
-    options;
+  const {
+    requiredPermissions,
+    adjacentPerm,
+    usesAny,
+    readImpliesGroupAccess,
+    context,
+    denyMessages,
+  } = options;
 
   const groupOf = (perm: string) => perm.split(":")[0];
   const requirementIsRead = requiredPermissions.every((p) => p.endsWith(":read"));
@@ -129,7 +159,7 @@ export function expectAdjacentPermOutcome(
   );
 
   if (readImpliesGroupAccess && !usesAny && requirementIsRead && sameGroup) {
-    expectAllow(res, context);
+    expectAllow(res, { context, denyMessages });
     return;
   }
   expectDeny403(res, context);
