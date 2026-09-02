@@ -1,6 +1,6 @@
 {
   "name": "@guisao-llc/gambit-testing",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "The half of an authorization test suite that is the same in every app: assertions, a route manifest, and a per-permission grid generator.",
   "license": "UNLICENSED",
   "repository": {

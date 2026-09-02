@@ -5,7 +5,13 @@ import {
   expectAdjacentPermOutcome,
   HttpResponseLike,
 } from "./assertions";
-import { RouteEntry, entriesForPermission, pickAdjacentPerm, resolvePath } from "./manifest";
+import {
+  RouteEntry,
+  entriesForPermission,
+  pickAdjacentPerm,
+  resolvePath,
+  DEFAULT_PARAM_VALUES,
+} from "./manifest";
 
 /**
  * The per-permission grid.
@@ -81,6 +87,16 @@ export interface PermissionGridConfig {
    * rule, so an ALLOW test passes on a request that was refused.
    */
   denyMessages?: readonly string[];
+  /**
+   * Concrete values for this app's `:param` segments.
+   *
+   * Supply them. The built-in defaults cover `:id` and `:pid` only, and an
+   * unsubstituted param does NOT produce a tidy 404 — express matches the
+   * route and hands the controller the literal string ":studentId", which it
+   * casts to an ObjectId, which throws, which is a 500. That reads as a failed
+   * ALLOW assertion on a route where authorization worked perfectly.
+   */
+  paramValues?: Record<string, string>;
   /** Header used to carry the token. Defaults to a bearer Authorization. */
   authHeader?: () => [string, string];
 }
@@ -125,6 +141,7 @@ export function buildPermissionGrid(config: PermissionGridConfig): void {
     skipRoute = () => false,
     skipFeatureDenial = () => false,
     denyMessages = [],
+    paramValues = DEFAULT_PARAM_VALUES,
     authHeader = () => ["Authorization", "Bearer test-token"],
   } = config;
 
@@ -146,13 +163,13 @@ export function buildPermissionGrid(config: PermissionGridConfig): void {
         if (routes.length === 0) {
           // Surfaced as a skip rather than silence: a permission the catalog
           // defines and no route uses is worth seeing in the output.
-          it.skip(`no routes gated on ${perm.key} (defined but unused)`);
+          it.skip(`no routes gated on ${perm.key} (defined but unused)`, () => {});
           return;
         }
 
         for (const route of routes) {
           describe(`${route.method} ${route.path}`, () => {
-            const path = resolvePath(route.path);
+            const path = resolvePath(route.path, paramValues);
             const method = route.method.toLowerCase() as
               | "get" | "post" | "put" | "patch" | "delete";
             const send = (app: RequestAgent, body: unknown = {}) =>
