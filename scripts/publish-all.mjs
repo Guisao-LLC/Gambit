@@ -109,6 +109,26 @@ function isPublished({ name, version }) {
   }
 }
 
+/**
+ * Are we logged in? Checked BEFORE anything is built.
+ *
+ * npm answers a publish from an unauthenticated session with
+ * "404 Not Found — '<pkg>@<version>' is not in this registry", which is its
+ * least helpful possible phrasing: it returns 404 rather than 401 so it does
+ * not leak whether a private package exists, and the message points at the
+ * package rather than at the credential. Read literally, it sends you looking
+ * for a publishing bug that is not there.
+ *
+ * It costs one request, and it turns that into one sentence.
+ */
+function whoami() {
+  try {
+    return execSync("npm whoami", { stdio: "pipe" }).toString().trim();
+  } catch {
+    return null;
+  }
+}
+
 const ordered = inDependencyOrder(packages);
 const pending = [];
 
@@ -134,6 +154,22 @@ if (dryRun) {
   );
   process.exit(0);
 }
+
+const user = whoami();
+if (!user) {
+  console.error(
+    `\nNot logged in to npm — nothing was built.\n\n` +
+      `  npm login\n\n` +
+      `Then run this again. If you were logged in yesterday: npm invalidates CLI\n` +
+      `tokens when the account's 2FA settings change, so touching a passkey or\n` +
+      `authenticator logs the terminal out.\n\n` +
+      `Without this check npm answers the publish itself with "404 Not Found —\n` +
+      `'<package>' is not in this registry", which reads like a problem with the\n` +
+      `package and is not.\n`,
+  );
+  process.exit(1);
+}
+console.log(`\nlogged in as ${user}`);
 
 if (web) {
   console.log(
