@@ -99,12 +99,29 @@ function inDependencyOrder(list) {
   return ordered;
 }
 
-/** Is this exact version already on the registry? */
-function isPublished({ name, version }) {
+/**
+ * Is this exact version already on the registry?
+ *
+ * Asks the VERSION endpoint directly rather than going through `npm view`.
+ * Two reasons, both learned the hard way:
+ *
+ *   `npm view` reads the package DOCUMENT, which is CDN-cached and rebuilt
+ *   asynchronously after a publish. Immediately after a successful publish the
+ *   version endpoint returns 200 while the document still 404s — so `npm view`
+ *   reports a package as missing that is already live, and the script offers to
+ *   publish something the registry will then refuse.
+ *
+ *   `npm view` also consults the local cache, so a 404 fetched before a publish
+ *   can outlive the publish itself.
+ */
+async function isPublished({ name, version }) {
+  const url = `https://registry.npmjs.org/${name.replace("/", "%2f")}/${version}`;
   try {
-    execSync(`npm view ${name}@${version} version`, { stdio: "pipe" });
-    return true;
+    const res = await fetch(url, { headers: { "User-Agent": "gambit-publish" } });
+    return res.status === 200;
   } catch {
+    // Offline or the registry is unreachable — treat as not-published so the
+    // publish is attempted and fails loudly, rather than silently skipped.
     return false;
   }
 }
@@ -135,7 +152,7 @@ const pending = [];
 console.log(`\n${ordered.length} package(s), in dependency order:\n`);
 for (const pkg of ordered) {
   const { name, version } = pkg.manifest;
-  const published = isPublished(pkg.manifest);
+  const published = await isPublished(pkg.manifest);
   console.log(`  ${published ? "· already published" : "→ WILL PUBLISH   "}  ${name}@${version}`);
   if (!published) pending.push(pkg);
 }
@@ -213,7 +230,7 @@ for (const pkg of pending) {
      * authority on whether the version exists, and it costs one request on a
      * path that has already failed once.
      */
-    if (isPublished(pkg.manifest)) {
+    if (await isPublished(pkg.manifest)) {
       console.log(
         web
           ? `✓ ${name}@${version} published (npm reported an error for a retry of its own upload)`
