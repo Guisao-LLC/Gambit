@@ -47,9 +47,21 @@ export {
 } from "./cc-policy";
 export type { CcResolution } from "./cc-policy";
 
-export { baseAccountFields, applyAccountStatics } from "./base-account-fields";
-export type {
-  BaseAccount,
-  AccountStatics,
-  BaseAccountFieldsConfig,
-} from "./base-account-fields";
+/**
+ * The Mongoose half is NOT re-exported here. Import it from
+ * `@guisao-llc/gambit-account/mongoose`.
+ *
+ * Quick 260903-r5n — it used to be, and that made this entry point unusable in
+ * a browser. `base-account-fields` needs `Schema` as a VALUE (`new Schema(…)`,
+ * `Schema.Types.ObjectId`), so re-exporting it put a runtime `import
+ * "mongoose"` behind the package root. `@guisao-llc/gambit-ui` imports these
+ * rules for its password and avatar panels, so every consumer of the UI package
+ * pulled Mongoose into the bundle; Vite externalises Node's `events` for the
+ * browser, `EventEmitter` came back undefined, and the app died on
+ * `Class extends value undefined is not a constructor or null` — a stack trace
+ * naming neither Mongoose nor this package.
+ *
+ * The split is the fix and also the honest description: the rules are pure and
+ * run anywhere, the schema fragment is server-only. Nothing is lost — it moved
+ * one import specifier.
+ */

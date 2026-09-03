@@ -1,6 +1,6 @@
 {
   "name": "@guisao-llc/gambit-account",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "The account record, and the rules behind a profile page: password policy, avatar validation, and email-copy recipients.",
   "license": "UNLICENSED",
   "repository": {
@@ -35,5 +35,21 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mongoose": {
+      "types": "./dist/mongoose.d.ts",
+      "default": "./dist/mongoose.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependenciesMeta": {
+    "mongoose": {
+      "optional": true
+    }
   }
 }

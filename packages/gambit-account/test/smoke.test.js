@@ -17,9 +17,17 @@ const {
   normalizeEmailAddress,
   isPlausibleEmailAddress,
   parseAddressList,
+} = require("../dist/index.js");
+
+// Quick 260903-r5n — the Mongoose half has its own entry point. The root must
+// stay importable in a browser, so it cannot re-export anything that needs
+// `Schema` as a value. Importing these from "../dist/index.js" is exactly the
+// mistake that shipped Mongoose into a client bundle, so the test imports them
+// the way a consumer now has to.
+const {
   baseAccountFields,
   applyAccountStatics,
-} = require("../dist/index.js");
+} = require("../dist/mongoose.js");
 
 // ── password ─────────────────────────────────────────────────────────────────
 
@@ -206,4 +214,32 @@ test("isVerified defaults to false — unverified until proven otherwise", () =>
   const f = baseAccountFields();
   assert.equal(f.isVerified.required, true);
   assert.equal(f.isVerified.default, false, "a forgotten field must not be a signup error");
+});
+
+// Quick 260903-r5n — the guard for the bug that caused this split.
+//
+// The package root must not load Mongoose. When it did, every browser consumer
+// of @guisao-llc/gambit-ui pulled Mongoose into the bundle, Vite externalised
+// Node's `events`, and the app died on "Class extends value undefined" — a
+// message naming neither Mongoose nor this package. A comment saying "keep the
+// root pure" would not have survived the next convenient re-export.
+//
+// Runs in a CHILD process because this test file imports Mongoose itself, so
+// the parent's require cache can never answer the question.
+test("the package root does NOT load mongoose (browser-safe)", () => {
+  const { execFileSync } = require("node:child_process");
+  const probe =
+    'require("./dist/index.js");' +
+    'const hit = Object.keys(require.cache).some((k) => /[\\/]node_modules[\\/]mongoose[\\/]/.test(k));' +
+    'process.stdout.write(hit ? "LOADED" : "CLEAN");';
+  const out = execFileSync(process.execPath, ["-e", probe], {
+    cwd: __dirname + "/..",
+    encoding: "utf8",
+  });
+  assert.equal(out, "CLEAN");
+});
+
+test("the mongoose subpath DOES provide the schema half", () => {
+  assert.equal(typeof baseAccountFields, "function");
+  assert.equal(typeof applyAccountStatics, "function");
 });
