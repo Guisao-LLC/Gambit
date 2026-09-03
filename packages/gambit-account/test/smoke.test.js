@@ -277,3 +277,21 @@ test("the mongoose entry point is where the schema fragment lives", () => {
   assert.equal(root.baseAccountFields, undefined);
   assert.equal(root.applyAccountStatics, undefined);
 });
+
+test("the /mongoose subpath is resolvable by Node10 TypeScript", () => {
+  // `exports` maps are invisible to Node10 module resolution, which both
+  // consuming apps use (module: CommonJS defaults to it). Runtime was fine —
+  // Node honours exports — so there was no "cannot find module"; only the
+  // TYPES silently degraded, and every property on the account model became an
+  // error in files that had not changed.
+  //
+  // typesVersions is the shim Node10 DOES read. Without it, publishing a
+  // subpath is a type-level break that no runtime test can see.
+  const manifest = require("../package.json");
+  assert.ok(manifest.exports?.["./mongoose"], "modern resolvers need exports");
+  assert.deepEqual(
+    manifest.typesVersions?.["*"]?.mongoose,
+    ["dist/mongoose.d.ts"],
+    "Node10 resolvers need typesVersions",
+  );
+});
