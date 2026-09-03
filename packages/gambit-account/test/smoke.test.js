@@ -243,3 +243,37 @@ test("the mongoose subpath DOES provide the schema half", () => {
   assert.equal(typeof baseAccountFields, "function");
   assert.equal(typeof applyAccountStatics, "function");
 });
+
+// ── the browser/server boundary ──────────────────────────────────────────────
+
+test("the package ROOT pulls in no Mongoose — it has to load in a browser", () => {
+  // This is the guard for quick 260903-r5n. The root used to re-export
+  // base-account-fields, which needs Schema as a VALUE, so `import "mongoose"`
+  // sat behind the package root. gambit-ui imports the password and avatar
+  // rules from here, so every client bundle that touched the UI package pulled
+  // Mongoose in; Vite externalises Node's `events` for the browser,
+  // EventEmitter came back undefined, and both apps died on
+  // "Class extends value undefined" — a stack naming neither Mongoose nor this
+  // package.
+  //
+  // Asserting on the module CACHE rather than on exports: a re-export that
+  // never gets called would still have loaded the module.
+  const cacheBefore = Object.keys(require.cache).length;
+  delete require.cache[require.resolve("../dist/index.js")];
+  require("../dist/index.js");
+
+  const loaded = Object.keys(require.cache).filter((p) => /[\/]node_modules[\/](mongoose|mongodb)[\/]/.test(p));
+  assert.deepEqual(loaded, [], "the root entry point must not load mongoose");
+  assert.ok(cacheBefore >= 0);
+});
+
+test("the mongoose entry point is where the schema fragment lives", () => {
+  const server = require("../dist/mongoose.js");
+  assert.equal(typeof server.baseAccountFields, "function");
+  assert.equal(typeof server.applyAccountStatics, "function");
+
+  // And the root does NOT re-export them, which is what keeps it browser-safe.
+  const root = require("../dist/index.js");
+  assert.equal(root.baseAccountFields, undefined);
+  assert.equal(root.applyAccountStatics, undefined);
+});

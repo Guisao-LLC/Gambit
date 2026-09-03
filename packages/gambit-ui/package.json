@@ -1,6 +1,6 @@
 {
   "name": "@guisao-llc/gambit-ui",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Drop-in React panels for the screens every app has: profile details, avatar, and password change.",
   "license": "UNLICENSED",
   "repository": {
