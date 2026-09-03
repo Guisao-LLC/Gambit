@@ -22,6 +22,10 @@ import { join, extname } from "node:path";
 const pkgDir = process.cwd();
 const manifest = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
 
+/** Lowercased and stripped of anything that isn't a letter or digit, so
+ *  "API key", "api_key" and "apikey" all compare equal. */
+const squash = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
 /** Things that must never reach a public registry. */
 const FORBIDDEN = [
   {
@@ -34,7 +38,26 @@ const FORBIDDEN = [
   { name: "AWS access key id", re: /\bAKIA[0-9A-Z]{16}\b/g },
   { name: "GitHub token", re: /\bgh[pousr]_[A-Za-z0-9]{16,}\b/g },
   { name: "Slack token", re: /\bxox[abprs]-[A-Za-z0-9-]{10,}\b/g },
-  { name: "assigned secret literal", re: /\b(?:secret|password|passwd|token|api[_-]?key)\s*[:=]\s*["'][^"']{8,}["']/gi },
+  {
+    name: "assigned secret literal",
+    // Groups: (1) the key, (2) the value — both read by `ignore` below.
+    re: /\b(secret|password|passwd|token|api[_-]?key)\s*[:=]\s*["']([^"']{8,})["']/gi,
+    /**
+     * A value identical to its own key is a LABEL or a placeholder, not a
+     * credential — `password: "Password"` in a UI label dictionary, `token:
+     * "token"` in a fixture.
+     *
+     * This narrows a gate whose whole purpose is to stop something that becomes
+     * permanent, so the exception is the narrowest one that fixes the entire
+     * class: nothing about the match is trusted except that the value repeats
+     * its own field name. A real credential is never its own field name, and
+     * one that was would already be worthless.
+     *
+     * Compared with case and punctuation removed, so `api_key: "API key"` is
+     * covered too.
+     */
+    ignore: (m) => squash(m[1]) === squash(m[2]),
+  },
   { name: "connection string with credentials", re: /\b(?:mongodb(?:\+srv)?|postgres(?:ql)?|mysql|redis):\/\/[^\s"']*:[^\s"'@]+@/gi },
 ];
 
@@ -75,8 +98,9 @@ const findings = [];
 for (const file of files) {
   const text = readFileSync(file, "utf8");
   const rel = file.slice(pkgDir.length + 1);
-  for (const { name, re } of FORBIDDEN) {
+  for (const { name, re, ignore } of FORBIDDEN) {
     for (const m of text.matchAll(re)) {
+      if (ignore && ignore(m)) continue;
       findings.push({ level: "SECRET", rel, name, sample: m[0].slice(0, 48) });
     }
   }
