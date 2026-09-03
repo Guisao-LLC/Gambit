@@ -163,7 +163,18 @@ export function baseAccountFields(
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: passwordRequired, minlength: passwordMinLength },
     roles: { type: String, required: false },
-    isVerified: { type: Boolean, required: true },
+    /**
+     * Defaults to FALSE, which is the safe direction: a new account is
+     * unverified until something proves otherwise, and requiring the caller to
+     * remember means a forgotten field is a validation error at signup rather
+     * than a sensible default.
+     *
+     * Added when the second app adopted this and every signup failed
+     * validation — it had relied on exactly this default, while the first app
+     * set the field explicitly and never noticed its absence. A default cannot
+     * break the explicit case: it only applies when the field is missing.
+     */
+    isVerified: { type: Boolean, required: true, default: false },
     phoneNumber: { type: String, required: false },
     resetToken: { type: String, required: false },
     resetTokenExpiry: { type: Date, required: false },

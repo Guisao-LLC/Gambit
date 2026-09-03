@@ -198,3 +198,12 @@ test("the avatar subdocument has no _id of its own", () => {
   assert.deepEqual(Object.keys(m.schema.paths.avatar.schema.paths), ["base64", "mime"]);
   assert.equal(m.schema.paths.avatar.schema.options._id, false);
 });
+
+test("isVerified defaults to false — unverified until proven otherwise", () => {
+  // Added when the second app's signups all failed validation: it relied on
+  // this default while the first app set the field explicitly. A default only
+  // applies when the field is absent, so it cannot break the explicit case.
+  const f = baseAccountFields();
+  assert.equal(f.isVerified.required, true);
+  assert.equal(f.isVerified.default, false, "a forgotten field must not be a signup error");
+});
