@@ -18,6 +18,9 @@
     },
     {
       "path": "packages/gambit-testing"
+    },
+    {
+      "path": "packages/gambit-ui"
     }
   ]
 }

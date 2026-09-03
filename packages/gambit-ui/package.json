@@ -1,0 +1,42 @@
+{
+  "name": "@guisao-llc/gambit-ui",
+  "version": "0.1.0",
+  "description": "Drop-in React panels for the screens every app has: profile details, avatar, and password change.",
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "git+https://github.com/Guisao-LLC/Gambit.git", "directory": "packages/gambit-ui" },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-ui",
+  "keywords": ["react", "mui", "profile", "avatar", "password", "components"],
+  "engines": { "node": ">=20 <23" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "dependencies": {
+    "@guisao-llc/gambit-account": "^0.2.0"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "@mui/material": "^7",
+    "react": "^18 || ^19"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^7.3.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^18.3.12",
+    "jsdom": "^25.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vitest": "^3.2.4"
+  },
+  "publishConfig": { "access": "public" }
+}
