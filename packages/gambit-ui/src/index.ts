@@ -31,3 +31,26 @@ export type { ChangePasswordCardProps } from "./ChangePasswordCard";
 
 export { DEFAULT_LABELS } from "./types";
 export type { Profile, Avatar, ProfileClient, ProfileLabels } from "./types";
+
+/**
+ * The roles surface: a permission matrix, a merged create/edit dialog, and
+ * the panel that wires them to a role list. Every genuine divergence found
+ * between the two hosts this was extracted from — read-key handling, the
+ * create/edit isGlobal behavior, what "global" even means, who gates the
+ * "new role" trigger — is threaded through as a prop, never picked. See each
+ * component's own doc comment for the specific seam.
+ */
+export { PermissionMatrix } from "./roles/PermissionMatrix";
+export type { PermissionMatrixProps } from "./roles/PermissionMatrix";
+export { RoleFormDialog } from "./roles/RoleFormDialog";
+export type { RoleFormDialogProps } from "./roles/RoleFormDialog";
+export { RolesPanel } from "./roles/RolesPanel";
+export type { RolesPanelProps } from "./roles/RolesPanel";
+export { DEFAULT_ROLES_LABELS } from "./roles/types";
+export type {
+  RoleRecord,
+  PermissionRecord,
+  RoleDisplayGroup,
+  RoleFormValues,
+  RolesLabels,
+} from "./roles/types";

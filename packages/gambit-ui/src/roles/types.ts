@@ -77,6 +77,10 @@ export interface RolesLabels {
   scopeNonGlobal: string;
   isGlobalLabel: string;
   isGlobalTooltip: string;
+  /** Optional extra caption below the isGlobal switch. Undefined means "don't render". */
+  isGlobalHelperText?: string;
+  /** Optional info Alert shown above the matrix while isGlobal is true. Undefined means "don't render". */
+  isGlobalActiveNote?: string;
   defaultRoleLabel: string;
   defaultRoleTooltip: string;
 }
