@@ -4,6 +4,38 @@ Package work. App-specific items live in each app's own repo — deliberately,
 since this one is public and some of them describe gaps that should not be
 advertised.
 
+## Publish — two apps are blocked on it
+
+`gambit-ui` gained the roles surface and the person-identity fields
+(quick 260904-jtu) and needs **0.2.0 → 0.3.0**. `gambit-person@0.1.0` has never
+been published at all.
+
+Until both are on the registry, **neither consuming app can be built** by anyone
+who does not have this repo checked out beside them: both point at `file:`
+links, and a clean CI container will fail at install. That is a deploy blocker
+in each, recorded in their own TODOs.
+
+```bash
+node scripts/publish-all.mjs --web
+```
+
+Needs npm 2FA. Afterwards each app swaps its `file:` links back to caret ranges
+— remembering that npm's caret on `0.x` admits PATCH ONLY, so `^0.2.0` will not
+accept `0.3.0` — and deletes the link scaffolding, all of it commented
+TEMPORARY.
+
+### `gambit-ui` ships CommonJS, and that is what broke both apps
+
+No `module` field, no `exports` map. Installed from the registry it lands in
+node_modules where Vite applies CommonJS interop and its named exports resolve;
+as a `file:` link outside a project root, Vite treats it as source, skips the
+interop, and Rollup reports its exports as missing.
+
+Publishing makes the symptom go away, so this is not urgent — but a
+browser-facing package emitting only CJS is still the wrong default, and every
+consumer pays for it in bundling. Worth an ESM build (or dual output with an
+`exports` map) before 1.0.
+
 ## Publish `create-gambit-app`
 
 `0.1.0` is built, tested and pushed but not on the registry. Until it is,
@@ -53,10 +85,10 @@ nothing is broken; it is describing an older arrangement.
 `events`, `change-log`, `data`, `ai`, `diagnostics`. All are leaf nodes except
 `data` and `ai`, which depend on `auth`, so any order works.
 
-**`gambit-person@0.1.0` is built and tested but not published, and no app
-consumes it yet.** Both apps still enroll people by hand. Adopting it is a
-behaviour change in each — see their own TODOs, which is where the specifics
-belong.
+**`gambit-person@0.1.0` is built and tested but not published.** The server-side
+enrollment factory has no consumer yet — both apps still enroll people by hand,
+and adopting it is a behaviour change in each. Its `checkIdentity` half IS
+consumed, through `gambit-ui`.
 
 ## Not doing, and why
 
