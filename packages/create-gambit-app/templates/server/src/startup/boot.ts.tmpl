@@ -1,0 +1,53 @@
+import { Permission } from "../models/permission-model";
+import { Roles } from "../models/roles-model";
+import { refreshCache } from "../services/permission-cache";
+import { KNOWN_PERMISSIONS, ALL_PERMISSION_KEYS } from "../config/permissions";
+
+/**
+ * Bring the permission rows in the database into line with the catalog in code.
+ *
+ * Upserts what the catalog declares and removes what it no longer does, so the
+ * file is the source of truth and the collection follows. It never touches a
+ * ROLE's grants — adding a permission gives it to nobody until somebody grants
+ * it deliberately.
+ */
+export async function syncPermissions(): Promise<void> {
+  await Permission.bulkWrite(
+    KNOWN_PERMISSIONS.map(({ key, label, group, action }) => ({
+      updateOne: {
+        filter: { key },
+        update: { $set: { label, group, action }, $setOnInsert: { key } },
+        upsert: true,
+      },
+    })),
+  );
+
+  const removed = await Permission.deleteMany({ key: { $nin: ALL_PERMISSION_KEYS } });
+  if (removed.deletedCount) {
+    console.log(`Removed ${removed.deletedCount} permission(s) no longer in the catalog`);
+  }
+}
+
+/**
+ * Say out loud whether anybody can actually administer this app.
+ *
+ * A fresh database has no roles, so the first account signs in able to do
+ * nothing — which looks like a bug and is not. Better to print it at boot than
+ * to have someone discover it by clicking.
+ */
+export async function reportRoleState(): Promise<void> {
+  const count = await Roles.estimatedDocumentCount();
+  if (count === 0) {
+    console.warn(
+      "No roles exist yet. Create one and grant it roles:* and users:* so " +
+        "somebody can administer this app.",
+    );
+  }
+}
+
+export async function boot(): Promise<void> {
+  await syncPermissions();
+  await reportRoleState();
+  // Last: the cache reads the rows the steps above just settled.
+  await refreshCache();
+}

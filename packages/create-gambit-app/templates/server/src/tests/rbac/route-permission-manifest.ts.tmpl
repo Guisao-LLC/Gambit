@@ -1,0 +1,46 @@
+import type { RouteEntry as BaseRouteEntry } from "@guisao-llc/gambit-testing";
+
+/**
+ * Every permission-gated route, and what gates it.
+ *
+ * HAND-MAINTAINED on purpose. A manifest derived from source at run time would
+ * agree with source by construction and could never detect drift — the point
+ * is that this is an INDEPENDENT statement of what SHOULD be gated, which can
+ * then be compared against what IS.
+ *
+ * Add a row when you add a gated route. The grid turns each one into four
+ * assertions: the permission allows, no token is a 401, no permissions is a
+ * 403, and a neighbouring permission gets the documented answer.
+ *
+ * Public and authenticate-only routes are EXCLUDED rather than listed as
+ * ungated — /api/auth/* and /api/profile/* are both deliberate omissions.
+ */
+export interface RouteEntry extends BaseRouteEntry {
+  /** Always true — public routes are excluded from this table, not listed. */
+  authRequired: true;
+}
+
+export const ROUTE_MANIFEST: RouteEntry[] = [
+  { method: "GET",    path: "/api/users",      requiredPermissions: ["users:read"],   usesAny: false, authRequired: true, sourceFile: "user-routes.ts" },
+  { method: "GET",    path: "/api/users/:pid", requiredPermissions: ["users:read"],   usesAny: false, authRequired: true, sourceFile: "user-routes.ts" },
+  { method: "PUT",    path: "/api/users/:id",  requiredPermissions: ["users:write"],  usesAny: false, authRequired: true, sourceFile: "user-routes.ts" },
+  { method: "DELETE", path: "/api/users/:id",  requiredPermissions: ["users:delete"], usesAny: false, authRequired: true, sourceFile: "user-routes.ts" },
+
+  // Add yours the same way. For example:
+  // { method: "GET",    path: "/api/things",     requiredPermissions: ["things:read"],   usesAny: false, authRequired: true, sourceFile: "thing-routes.ts" },
+  // { method: "POST",   path: "/api/things",     requiredPermissions: ["things:add"],    usesAny: false, authRequired: true, sourceFile: "thing-routes.ts" },
+  // { method: "PUT",    path: "/api/things/:id", requiredPermissions: ["things:write"],  usesAny: false, authRequired: true, sourceFile: "thing-routes.ts" },
+  // { method: "DELETE", path: "/api/things/:id", requiredPermissions: ["things:delete"], usesAny: false, authRequired: true, sourceFile: "thing-routes.ts" },
+];
+
+/**
+ * Concrete values for this app's `:param` segments.
+ *
+ * 24-hex because controllers cast these to ObjectIds. A value that will not
+ * cast throws INSIDE the controller, producing a 500 — which reads as a failed
+ * authorization assertion on a route where authorization worked perfectly.
+ */
+export const SAMPLE_PATH_VALUES: Record<string, string> = {
+  ":id": "64f000000000000000000789",
+  ":pid": "64f000000000000000000abc",
+};

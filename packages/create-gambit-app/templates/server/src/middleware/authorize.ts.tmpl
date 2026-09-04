@@ -1,0 +1,51 @@
+import { createAuthorize } from "@guisao-llc/gambit-rbac";
+import { extractAndVerifyToken, type DecodedToken } from "../util/jwt/jwt";
+
+/**
+ * __APP_NAME__'s authorization wiring.
+ *
+ * The guards come from the package; this file supplies what only this app can
+ * know. Both options below are OFF by default, because each one WIDENS access
+ * and a shared package must not widen access in an app that never asked.
+ */
+const guards = createAuthorize<DecodedToken>({
+  verifyToken: extractAndVerifyToken,
+
+  /**
+   * Accept any permission in a group for that group's `:read`.
+   *
+   * Turn this on if your UI stops granting `<group>:read` keys directly — then
+   * holding `invoices:write` is the only way anyone ends up able to read
+   * invoices, and without this every `:read` route becomes unreachable.
+   *
+   * `authorizeAny` stays strict regardless: a route that already lists several
+   * permissions has stated its full set.
+   */
+  readImpliesGroupAccess: false,
+
+  /**
+   * A role that passes every permission check.
+   *
+   * Uncomment if your app has superusers. The flag is transported on the
+   * cached role but never interpreted by the package — two apps already use
+   * `isGlobal` to mean different things, one of them with no elevated rights
+   * at all, so each app has to say what its own flag means.
+   */
+  // isSuperRole: (role) => role?.isGlobal === true,
+
+  /**
+   * An entitlement layer, if you have one. Runs only AFTER the permission
+   * check passes, and returns an HttpError to deny:
+   *
+   *   checkEntitlement: ({ matched, claims }) =>
+   *     tenantHasFeature(claims.tenantId, featureFor(matched))
+   *       ? null
+   *       : new HttpError("This feature is not enabled", 403),
+   */
+});
+
+/** Requires the exact permission: router.get("/", authorize("users:read"), handler) */
+export const authorize = guards.authorize;
+
+/** Requires ANY ONE of the listed permissions. */
+export const authorizeAny = guards.authorizeAny;

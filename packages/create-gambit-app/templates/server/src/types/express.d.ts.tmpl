@@ -1,0 +1,21 @@
+import { DecodedToken } from "../util/jwt/jwt";
+
+/**
+ * Tell TypeScript what `req.user` is.
+ *
+ * THIS FILE HAS TO LIVE IN YOUR APP, and the Gambit packages deliberately do
+ * not ship it. `authenticate` and `authorize` both WRITE this property, but a
+ * package that also DECLARED it would collide with every other package doing
+ * the same, and you would lose the ability to type your own claims.
+ *
+ * So the packages write the key without claiming its type, and this is where
+ * the type is claimed. Extend `DecodedToken` in util/jwt/jwt.ts and it shows up
+ * on every handler.
+ */
+declare global {
+  namespace Express {
+    interface Request {
+      user?: DecodedToken;
+    }
+  }
+}

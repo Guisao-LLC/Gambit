@@ -1,0 +1,23 @@
+import mongoose, { Model, Schema } from "mongoose";
+import { permissionFields } from "@guisao-llc/gambit-rbac";
+
+/**
+ * A permission DEFINITION — not a grant. Which role holds it lives on the role.
+ *
+ * These rows are synced from `config/permissions.ts` on boot, so the catalog in
+ * code is the source of truth and the collection follows it.
+ */
+export interface IPermission {
+  _id: mongoose.Types.ObjectId;
+  key: string;
+  label: string;
+  group: string;
+  action: "read" | "add" | "write" | "delete";
+}
+
+export interface PermissionModel extends Model<IPermission> {}
+
+const permissionSchema = new Schema<IPermission>(permissionFields(), { timestamps: true });
+
+const Permission = mongoose.model<IPermission, PermissionModel>("Permission", permissionSchema);
+export { Permission };

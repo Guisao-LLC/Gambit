@@ -1,0 +1,40 @@
+import { signToken, verifyToken, type BaseTokenClaims } from "@guisao-llc/gambit-auth";
+
+/**
+ * This app's token claims.
+ *
+ * `BaseTokenClaims` carries what any app needs — id, email, name, roles,
+ * isVerified. Add yours here: a tenant id, an account kind, anything your
+ * middleware reads off `req.user`. Keep it small; a token is sent on every
+ * request and cannot be revoked before it expires.
+ */
+export interface DecodedToken extends BaseTokenClaims {
+  // __APP_NAME__'s own claims go here, e.g.:
+  // tenantId?: string;
+}
+
+/**
+ * Sign a token for this user.
+ *
+ * The payload is built explicitly rather than by spreading a user document —
+ * a spread puts whatever the model happens to hold into a token the client can
+ * read, including fields added later by someone not thinking about tokens.
+ */
+export const generateJwtToken = (claims: DecodedToken): Promise<string> =>
+  signToken({
+    id: claims.id,
+    email: claims.email,
+    name: claims.name,
+    roles: claims.roles,
+    isVerified: claims.isVerified,
+  });
+
+/**
+ * Verify an Authorization header.
+ *
+ * `authenticate` and `authorize` are both GIVEN this function rather than
+ * importing one, which is what lets a test mock this module and have the
+ * middleware actually use the fake.
+ */
+export const extractAndVerifyToken = (authorization?: string): Promise<DecodedToken> =>
+  verifyToken<DecodedToken>(authorization);

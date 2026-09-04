@@ -1,0 +1,37 @@
+/**
+ * Per-permission grid — Users.
+ *
+ * Copy this file per permission group. All that changes is `group`.
+ *
+ * The grid comes from `@guisao-llc/gambit-testing`; this file supplies only
+ * what is yours — the group name, your catalog, your manifest, and how to seed
+ * a user. What to ASSERT is shared, so a correction reaches every group and
+ * every app at once.
+ *
+ * It generates four assertions per gated route, and the DENIALS are the ones
+ * that matter: a gate checking nothing still passes "the right permission
+ * works". Only a neighbouring permission being refused proves it is checking
+ * the right key rather than merely checking non-emptiness.
+ */
+
+import { buildPermissionGrid } from "@guisao-llc/gambit-testing";
+import { buildTestApp, withUser, withoutUser } from "../harness";
+import { ROUTE_MANIFEST, SAMPLE_PATH_VALUES } from "../route-permission-manifest";
+import { KNOWN_PERMISSIONS } from "../../../config/permissions";
+
+buildPermissionGrid({
+  group: "Users",
+  catalog: KNOWN_PERMISSIONS,
+  manifest: ROUTE_MANIFEST,
+  buildApp: buildTestApp,
+  paramValues: SAMPLE_PATH_VALUES,
+  withUser,
+  withoutUser,
+  // Must match what middleware/authorize.ts actually passes, or the adjacent
+  // assertions predict the wrong outcome.
+  readImpliesGroupAccess: false,
+  // If you add an entitlement layer, list its non-core feature keys and the
+  // messages it emits:
+  //   allFeatureKeys: [...],
+  //   denyMessages: ["This feature is not enabled"],
+});

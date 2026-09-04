@@ -1,0 +1,36 @@
+/**
+ * __APP_NAME__'s permission catalog — the single source of truth.
+ *
+ * THIS IS THE FILE TO EDIT FIRST. Everything else reads from it: boot syncs
+ * these rows into the database, the authorize() middleware checks against
+ * them, and the test grid generates a case per key.
+ *
+ * Adding a feature means adding its four keys here and nothing else. On the
+ * next boot they exist; grant them in whatever UI you build for roles.
+ *
+ * Groups map to sections a person recognises. Actions map to columns:
+ * View | Add | Edit | Delete.
+ */
+export interface KnownPermission {
+  key: string;
+  label: string;
+  group: string;
+  action: "read" | "add" | "write" | "delete";
+}
+
+export const KNOWN_PERMISSIONS: KnownPermission[] = [
+  // Users — who can see and manage accounts.
+  { key: "users:read",   label: "Users – View",   group: "Users", action: "read"   },
+  { key: "users:add",    label: "Users – Add",    group: "Users", action: "add"    },
+  { key: "users:write",  label: "Users – Edit",   group: "Users", action: "write"  },
+  { key: "users:delete", label: "Users – Delete", group: "Users", action: "delete" },
+
+  // Roles — who can change what anyone else can do. Grant sparingly: this is
+  // the permission that can grant every other permission.
+  { key: "roles:read",   label: "Roles – View",   group: "Roles", action: "read"   },
+  { key: "roles:add",    label: "Roles – Add",    group: "Roles", action: "add"    },
+  { key: "roles:write",  label: "Roles – Edit",   group: "Roles", action: "write"  },
+  { key: "roles:delete", label: "Roles – Delete", group: "Roles", action: "delete" },
+];
+
+export const ALL_PERMISSION_KEYS = KNOWN_PERMISSIONS.map((p) => p.key);

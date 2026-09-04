@@ -1,0 +1,10 @@
+import express from "express";
+import { login, signup } from "../controllers/auth-controller";
+
+const router = express.Router();
+
+// Public by necessity — you cannot authenticate to get an account.
+router.post("/signup", signup);
+router.post("/login", login);
+
+export default router;

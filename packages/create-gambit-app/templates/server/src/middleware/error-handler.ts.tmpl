@@ -1,0 +1,8 @@
+/**
+ * Mount `notFound` after all routes, and `errorHandler` last.
+ *
+ * The handler reads `code`, then `statusCode`, then `status`, then falls back
+ * to 500 — errors arrive from your own HttpError, the packages', and libraries
+ * that set only `status`, and reading one field turns somebody's 404 into a 500.
+ */
+export { errorHandler, notFound } from "@guisao-llc/gambit-auth";

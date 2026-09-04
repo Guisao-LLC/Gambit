@@ -1,0 +1,41 @@
+import mongoose, { Model, Document, Schema } from "mongoose";
+import {
+  baseAccountFields,
+  applyAccountStatics,
+  type BaseAccount,
+  type AccountStatics,
+} from "@guisao-llc/gambit-account/mongoose";
+
+/**
+ * __APP_NAME__'s account.
+ *
+ * Everything an account is in any app — name, email, password, role,
+ * verification, reset and magic-link tokens, avatar, the copy-me-on-mail flag —
+ * comes from `baseAccountFields()`. Add what makes an account YOURS below.
+ *
+ * Note the import path: `/mongoose`, not the package root. The root stays free
+ * of Mongoose so the same rules can be used in a browser; this fragment needs
+ * `Schema` as a value.
+ */
+interface IUser extends BaseAccount {
+  _id: mongoose.Types.ObjectId;__TENANT_FIELD_DECL__
+  // Your own fields go here.
+}
+
+export interface UserModel extends Model<IUser & Document>, AccountStatics<IUser> {}
+
+const userSchema = new Schema<IUser>(
+  {
+    ...baseAccountFields({
+      tenant: __ACCOUNT_TENANT__,
+      // The kinds of account you have. Omit for an app with only one.
+      // accountType: { values: ["staff", "member"], default: "member" },
+    }),
+  },
+  { timestamps: true },
+);
+
+applyAccountStatics(userSchema);
+
+const Users = mongoose.model<IUser, UserModel>("Users", userSchema);
+export { Users, IUser };

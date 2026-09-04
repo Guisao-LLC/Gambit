@@ -1,0 +1,50 @@
+# __APP_NAME__ — server
+
+Authentication, roles and permissions, and a profile, already working.
+
+## Run it
+
+```bash
+npm install
+cp .env.example .env.development.local   # set MONGO_URI and JWT_SECRET
+npm test                                  # the RBAC grid
+npm run dev
+```
+
+## What is here
+
+| | |
+|---|---|
+| `POST /api/auth/signup` · `/login` | public, returns a token |
+| `GET·PATCH /api/profile` | your own account |
+| `PUT·DELETE /api/profile/avatar` | your picture |
+| `POST /api/profile/password` | change your own password |
+| `GET /api/health` | public |
+
+## What to edit first
+
+**`src/config/permissions.ts`** — your catalog. Everything reads from it: boot
+syncs it into the database, `authorize()` checks against it, and the test grid
+generates a case per key. Adding a feature means adding its four keys and
+nothing else.
+
+Then mount a router in `src/index.ts`, gate it with `authorize("thing:read")`,
+and add each gated route to `src/tests/rbac/route-permission-manifest.ts`.
+
+## Where the rest lives
+
+The rules — token verification, permission matching, password and avatar
+policy — come from the Gambit packages as pinned dependencies. What is in this
+repo is the GLUE: which model roles live in, what your token carries, what your
+permissions are.
+
+That split is deliberate. Copied code drifts and cannot be fixed centrally;
+linked code cannot be adapted. The line is: does every app need this to be the
+same, or does every app need it to be its own?
+
+## A fresh database has no roles
+
+The first account signs in able to do nothing, and boot says so. Create a role
+and grant it `roles:*` and `users:*` so somebody can administer the app. New
+accounts get no role at all — nothing is granted until it is granted
+deliberately.

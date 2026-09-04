@@ -1,0 +1,39 @@
+{
+  "name": "__APP_NAME__-server",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=20 <23" },
+  "scripts": {
+    "dev": "dotenv -e .env.development.local -- tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@guisao-llc/gambit-account": "^0.3.1",
+    "@guisao-llc/gambit-auth": "^0.1.0",
+    "@guisao-llc/gambit-cascade": "^0.1.0",
+    "@guisao-llc/gambit-rbac": "^0.2.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.12.1"
+  },
+  "devDependencies": {
+    "@guisao-llc/gambit-testing": "^0.3.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.2",
+    "@types/supertest": "^6.0.2",
+    "dotenv-cli": "^7.4.4",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@guisao-llc/create-gambit-app",
+  "version": "0.1.0",
+  "description": "Scaffold a new app with auth, RBAC and a profile already working, wired to the Gambit packages.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git",
+    "directory": "packages/create-gambit-app"
+  },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/create-gambit-app",
+  "keywords": [
+    "scaffold",
+    "generator",
+    "express",
+    "mongoose",
+    "rbac",
+    "starter"
+  ],
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "type": "module",
+  "bin": {
+    "create-gambit-app": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

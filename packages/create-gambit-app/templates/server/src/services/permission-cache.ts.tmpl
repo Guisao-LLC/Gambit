@@ -1,0 +1,39 @@
+import { configurePermissionCache } from "@guisao-llc/gambit-rbac";
+import { Roles } from "../models/roles-model";
+
+/**
+ * Every authorization decision reads from an in-memory role cache, so it is a
+ * map lookup rather than a query.
+ *
+ * The package cannot import your role model — which collection roles live in,
+ * and how they are scoped, is yours — so it is told how to LOAD them instead.
+ * Configured at import time, because everything importing this module already
+ * expects a ready cache.
+ *
+ * Call `refreshCache()` on boot and after any role write. It throws on
+ * failure rather than swallowing: a silent failure leaves the cache stale, so
+ * the app keeps enforcing permissions that were just changed.
+ */
+configurePermissionCache({
+  loadRoles: async () => {
+    const roles = await Roles.find();
+    return roles.map((role) => ({
+      name: role.name,
+      permissions: role.permissions,
+      isGlobal: role.isGlobal ?? false,
+      bypassFeatureChecks: role.bypassFeatureChecks ?? false,
+    }));
+  },
+  onRefresh: (count) => console.log(`Permission cache refreshed (${count} roles)`),
+});
+
+export {
+  getPermissions,
+  hasPermission,
+  hasAnyPermission,
+  listRoleNamesWithPermission,
+  getCachedRole,
+  refreshCache,
+  _seedCacheForTesting,
+} from "@guisao-llc/gambit-rbac";
+export type { CachedRole } from "@guisao-llc/gambit-rbac";

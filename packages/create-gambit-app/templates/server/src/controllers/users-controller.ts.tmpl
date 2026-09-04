@@ -1,0 +1,82 @@
+import { RequestHandler } from "express";
+import HttpError from "../util/errors/http-error";
+import { Users } from "../models/user-model";
+import { refreshCache } from "../services/permission-cache";
+
+/**
+ * Administering OTHER people's accounts — distinct from `profile-controller`,
+ * which is your own.
+ *
+ * That distinction is why these routes carry permissions and the profile ones
+ * do not: here the id comes from the request, so something has to decide
+ * whether this caller may act on that account.
+ *
+ * `-passwordHash` on every projection. It is not needed to render a user, and
+ * a hash that never leaves the database cannot leak from an endpoint.
+ */
+const SAFE = "-passwordHash -resetToken -resetTokenExpiry -magicToken -magicTokenExpiry";
+
+export const listUsers: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json({ message: await Users.find().select(SAFE).lean() });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUser: RequestHandler = async (req, res, next) => {
+  try {
+    const user = await Users.findById(req.params.pid).select(SAFE).lean();
+    if (!user) return next(new HttpError("User not found", 404));
+    res.json({ message: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update someone else's account.
+ *
+ * An explicit allowlist, not a spread of the body — a spread would let anyone
+ * holding `users:write` set a password hash directly, bypassing the policy the
+ * profile route enforces.
+ */
+export const updateUser: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, roles, isVerified, phoneNumber } = req.body ?? {};
+    const user = await Users.findByIdAndUpdate(
+      req.params.id,
+      { $set: { name, roles, isVerified, phoneNumber } },
+      { new: true, runValidators: true },
+    )
+      .select(SAFE)
+      .lean();
+    if (!user) return next(new HttpError("User not found", 404));
+
+    // A role change alters what that account may do, and every authorization
+    // decision reads the cache — so refresh it now rather than at next boot.
+    await refreshCache();
+    res.json({ message: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUser: RequestHandler = async (req, res, next) => {
+  try {
+    const user = await Users.findById(req.params.id);
+    if (!user) return next(new HttpError("User not found", 404));
+
+    // `isProtected` marks accounts that must survive — a seeded administrator,
+    // typically. Without it, the last admin can delete themselves.
+    if (user.isProtected) return next(new HttpError("Cannot delete a protected user", 403));
+    if (req.user?.id === req.params.id) {
+      return next(new HttpError("Cannot delete the account you are signed in as", 400));
+    }
+
+    await Users.findByIdAndDelete(req.params.id);
+    res.json({ message: req.params.id });
+  } catch (error) {
+    next(error);
+  }
+};

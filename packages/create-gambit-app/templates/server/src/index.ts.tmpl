@@ -1,0 +1,49 @@
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import { errorHandler, notFound } from "./middleware/error-handler";
+import { boot } from "./startup/boot";
+import authRoutes from "./routes/auth-routes";
+import profileRoutes from "./routes/profile-routes";
+import userRoutes from "./routes/user-routes";
+
+const app = express();
+const PORT = Number(process.env.PORT ?? 3001);
+
+app.use(cors({ origin: process.env.ORIGIN_URL ?? true }));
+app.use(express.json({ limit: "10mb" }));
+
+// Public — a health check that needs a token cannot tell you the app is up.
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
+
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+// Gated on users:* — see the manifest in src/tests/rbac.
+app.use("/api/users", userRoutes);
+
+// Mount your own routers here, gated with authorize("thing:read") from
+// ./middleware/authorize, and add each gated route to the manifest in
+// src/tests/rbac/route-permission-manifest.ts so the grid covers it.
+
+// LAST, and in this order: anything reaching notFound matched no route, and
+// errorHandler must be registered after everything that can throw.
+app.use(notFound);
+app.use(errorHandler);
+
+async function start(): Promise<void> {
+  const uri = process.env.MONGO_URI;
+  if (!uri) throw new Error("MONGO_URI is not set. Copy .env.example and fill it in.");
+
+  await mongoose.connect(uri);
+  // Before listening: boot syncs the permission catalog and warms the role
+  // cache, and serving a request before that is serving one with no
+  // permissions loaded.
+  await boot();
+
+  app.listen(PORT, () => console.log(`__APP_NAME__ listening on :${PORT}`));
+}
+
+start().catch((error) => {
+  console.error("Failed to start:", error);
+  process.exit(1);
+});

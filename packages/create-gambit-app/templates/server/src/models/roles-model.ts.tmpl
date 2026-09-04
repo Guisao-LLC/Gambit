@@ -1,0 +1,32 @@
+import mongoose, { Model, Schema } from "mongoose";
+import { roleFields } from "@guisao-llc/gambit-rbac";
+
+/**
+ * A role: a name, and the permission keys it grants.
+ *
+ * `permissions` holds KEY STRINGS, not references — which is why deleting a
+ * role or a permission means purging strings out of arrays rather than relying
+ * on referential integrity. The cascades in gambit-rbac exist for that.
+ */
+interface IRole {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  permissions: string[];
+  isGlobal?: boolean;
+  bypassFeatureChecks?: boolean;
+  assignable?: boolean;
+}
+
+export interface RoleModel extends Model<IRole> {}
+
+const roleSchema = new Schema<IRole>(
+  { ...roleFields({ tenant: __ROLE_TENANT__ }) },
+  { timestamps: true },
+);
+
+// Role names are unique. Scope the index to your tenant field if roles are
+// per-organization: roleSchema.index({ name: 1, tenantId: 1 }, { unique: true, sparse: true })
+roleSchema.index({ name: 1 }, { unique: true });
+
+const Roles = mongoose.model<IRole, RoleModel>("Roles", roleSchema);
+export { Roles, IRole };

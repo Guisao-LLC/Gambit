@@ -1,0 +1,11 @@
+import { createAuthenticate } from "@guisao-llc/gambit-auth";
+import { extractAndVerifyToken } from "../util/jwt/jwt";
+
+/**
+ * Verify a token and attach the claims. Use on routes that need a signed-in
+ * user but no particular permission.
+ *
+ * The binding happens HERE, not inside the package, so a test that mocks
+ * `util/jwt/jwt` can reach it.
+ */
+export const authenticate = createAuthenticate({ verifyToken: extractAndVerifyToken });

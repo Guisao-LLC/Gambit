@@ -1,0 +1,74 @@
+import { RequestHandler } from "express";
+import bcrypt from "bcrypt";
+import { checkNewPassword } from "@guisao-llc/gambit-account";
+import HttpError from "../util/errors/http-error";
+import { Users } from "../models/user-model";
+import { generateJwtToken } from "../util/jwt/jwt";
+
+/** Cost 10 is the usual balance: slow enough to resist offline guessing,
+ *  fast enough that a login is not noticeably delayed. */
+const BCRYPT_ROUNDS = 10;
+
+export const signup: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body ?? {};
+    if (!name || !email) return next(new HttpError("Name and email are required", 422));
+
+    // The same rule the profile's password change applies, from the shared
+    // package — so the rule someone meets when they join is the rule they meet
+    // when they change it.
+    const policy = checkNewPassword(String(password ?? ""));
+    if (!policy.ok) return next(new HttpError(policy.reason ?? "Invalid password", 422));
+
+    const normalized = String(email).toLowerCase();
+    if (await Users.findByEmail(normalized)) {
+      return next(new HttpError("An account with that email already exists", 409));
+    }
+
+    const user = await Users.create({
+      name: String(name).trim(),
+      email: normalized,
+      passwordHash: await bcrypt.hash(String(password), BCRYPT_ROUNDS),
+      // No role. A new account can do nothing until somebody grants it
+      // something, which is the safe direction to be wrong in.
+      isVerified: false,
+    });
+
+    res.status(201).json({
+      token: await generateJwtToken({
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        roles: user.roles,
+        isVerified: user.isVerified,
+      }),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const login: RequestHandler = async (req, res, next) => {
+  try {
+    const { email, password } = req.body ?? {};
+    const user = await Users.findByEmail(String(email ?? "").toLowerCase());
+
+    // One message for "no such account" and "wrong password", deliberately.
+    // Distinguishing them tells an attacker which emails are registered.
+    const ok =
+      user?.passwordHash && (await bcrypt.compare(String(password ?? ""), user.passwordHash));
+    if (!ok) return next(new HttpError("Invalid email or password", 401));
+
+    res.json({
+      token: await generateJwtToken({
+        id: user!._id.toString(),
+        email: user!.email,
+        name: user!.name,
+        roles: user!.roles,
+        isVerified: user!.isVerified,
+      }),
+    });
+  } catch (error) {
+    next(error);
+  }
+};

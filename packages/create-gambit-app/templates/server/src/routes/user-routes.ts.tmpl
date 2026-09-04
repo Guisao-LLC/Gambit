@@ -1,0 +1,20 @@
+import express from "express";
+import { authorize } from "../middleware/authorize";
+import { listUsers, getUser, updateUser, deleteUser } from "../controllers/users-controller";
+
+const router = express.Router();
+
+/**
+ * Administering other people's accounts.
+ *
+ * Every route is gated, and every one appears in
+ * `src/tests/rbac/route-permission-manifest.ts` — that is the pairing to keep
+ * up as you add routes. `authorize()` verifies the token itself, so these do
+ * not also need `authenticate`.
+ */
+router.get("/", authorize("users:read"), listUsers);
+router.get("/:pid", authorize("users:read"), getUser);
+router.put("/:id", authorize("users:write"), updateUser);
+router.delete("/:id", authorize("users:delete"), deleteUser);
+
+export default router;

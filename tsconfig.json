@@ -21,6 +21,9 @@
     },
     {
       "path": "packages/gambit-ui"
+    },
+    {
+      "path": "packages/create-gambit-app"
     }
   ]
 }

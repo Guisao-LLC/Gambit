@@ -1,0 +1,231 @@
+/**
+ * __APP_NAME__ — the RBAC test harness.
+ *
+ * Only the app-specific half lives here — how to build the app, how to
+ * synthesize a user, and which models to stub. What to ASSERT comes from
+ * `@guisao-llc/gambit-testing`, so the rules are shared across every app
+ * built this way rather than re-derived here and got wrong differently.
+ *
+ * No `describe`/`it` in this file. Test files import the named exports.
+ */
+
+import { vi } from "vitest";
+
+// ─── Mocks ───────────────────────────────────────────────────────────────────
+// Hoisted by vitest, so they must be declared before any router import.
+
+// The JWT verifier. Mocking THIS module — rather than reaching into the
+// package — is exactly why `authenticate`/`authorize` take a verifier as
+// config: a package cannot be mocked into using a fake one.
+vi.mock("../../util/jwt/jwt", () => ({
+  extractAndVerifyToken: vi.fn(),
+  buildJwtPayload: vi.fn(),
+  generateJwtToken: vi.fn(),
+}));
+
+/**
+ * Mongoose, with `model` stubbed.
+ *
+ * Every file under models/ ends in `mongoose.model(...)`, so intercepting that
+ * one call covers all of them — and the next one added, without anyone
+ * remembering to come back here. The other app maintained an explicit list and
+ * it fell to 24 of 37; the 13 it missed loaded REAL models against no
+ * connection, and their first query buffered until the test timed out.
+ */
+vi.mock("mongoose", async () => {
+  const actual = await vi.importActual<typeof import("mongoose")>("mongoose");
+  const registry = new Map<string, unknown>();
+  // Build the mock first, then make it its OWN default export. Returning
+  // `default: actual` hands every `import mongoose from "mongoose"` the REAL
+  // module, so `mongoose.model(...)` in each model file resolves to the real
+  // one and its first query buffers until the test times out — which the
+  // shared assertion correctly reports as "a 500 is not an allow".
+  const mocked = {
+    ...actual,
+    startSession: vi.fn().mockResolvedValue({
+      startTransaction: vi.fn(),
+      commitTransaction: vi.fn().mockResolvedValue(undefined),
+      abortTransaction: vi.fn().mockResolvedValue(undefined),
+      endSession: vi.fn().mockResolvedValue(undefined),
+      withTransaction: vi.fn().mockImplementation(async (fn: () => unknown) => fn()),
+    }),
+    model: vi.fn().mockImplementation((name: string) => {
+      if (!registry.has(name)) registry.set(name, chainableModelMock());
+      return registry.get(name);
+    }),
+  };
+  return { ...mocked, default: mocked };
+});
+
+/**
+ * A model stub that survives the three shapes controllers use: a direct await,
+ * a chained `.select().lean()`, and `new Model(doc)` followed by `.save()`.
+ *
+ * A model is a CONSTRUCTOR as well as a namespace of statics, and a plain
+ * object throws "is not a constructor" — which surfaces as a 500 and reads as
+ * an authorization failure.
+ */
+function chainableModelMock() {
+  const query = (resolveTo: unknown): Record<string, unknown> => ({
+    select: vi.fn(() => query(resolveTo)),
+    lean: vi.fn(() => query(resolveTo)),
+    sort: vi.fn(() => query(resolveTo)),
+    limit: vi.fn(() => query(resolveTo)),
+    skip: vi.fn(() => query(resolveTo)),
+    populate: vi.fn(() => query(resolveTo)),
+    session: vi.fn(() => query(resolveTo)),
+    distinct: vi.fn(() => query([])),
+    exec: vi.fn().mockResolvedValue(resolveTo),
+    then: (ok: (v: unknown) => unknown, err: (e: unknown) => unknown) =>
+      Promise.resolve(resolveTo).then(ok, err),
+    catch: (err: (e: unknown) => unknown) => Promise.resolve(resolveTo).catch(err),
+  });
+
+  const instance = (doc: Record<string, unknown> = {}) => ({
+    _id: "64f000000000000000000000",
+    save: vi.fn().mockImplementation(function (this: unknown) {
+      return Promise.resolve(this);
+    }),
+    toObject: vi.fn().mockImplementation(function (this: unknown) {
+      return this;
+    }),
+    ...doc,
+  });
+
+  function ModelMock(this: Record<string, unknown>, doc: Record<string, unknown> = {}) {
+    Object.assign(this, instance(doc));
+  }
+
+  return Object.assign(ModelMock, {
+    find: vi.fn(() => query([])),
+    findOne: vi.fn(() => query(null)),
+    findById: vi.fn(() => query(null)),
+    findByIdAndUpdate: vi.fn(() => query(instance())),
+    findOneAndUpdate: vi.fn(() => query(instance())),
+    findByIdAndDelete: vi.fn(() => query(instance())),
+    findOneAndDelete: vi.fn(() => query(instance())),
+    updateOne: vi.fn(() => query({ acknowledged: true })),
+    updateMany: vi.fn(() => query({ acknowledged: true })),
+    deleteOne: vi.fn(() => query({ acknowledged: true, deletedCount: 0 })),
+    deleteMany: vi.fn(() => query({ acknowledged: true, deletedCount: 0 })),
+    countDocuments: vi.fn().mockResolvedValue(0),
+    exists: vi.fn(() => query({ _id: "64f000000000000000000000" })),
+    create: vi.fn().mockResolvedValue(instance()),
+    insertMany: vi.fn().mockResolvedValue([]),
+    aggregate: vi.fn(() => query([])),
+    distinct: vi.fn(() => query([])),
+    bulkWrite: vi.fn().mockResolvedValue({ acknowledged: true }),
+  });
+}
+
+// ─── Imports (after the mocks) ───────────────────────────────────────────────
+
+import express, { Express } from "express";
+import supertest from "supertest";
+import { extractAndVerifyToken } from "../../util/jwt/jwt";
+import { _seedCacheForTesting } from "../../services/permission-cache";
+import { KNOWN_PERMISSIONS } from "../../config/permissions";
+
+import userRoutes from "../../routes/user-routes";
+
+// Mount every router the manifest reaches, at the same path index.ts uses.
+// Public routers are left out: the manifest lists permission-gated routes, so
+// nothing here would reach them.
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+export const ALL_PERMISSION_KEYS = KNOWN_PERMISSIONS.map((p) => p.key);
+export const ROLE_UNDER_TEST = "_test_role";
+
+const mockVerify = vi.mocked(extractAndVerifyToken);
+
+/** A castable 24-hex id — the shape a real Mongo _id has. */
+function objectIdHex(): string {
+  return Array.from({ length: 24 }, () =>
+    "0123456789abcdef"[Math.floor(Math.random() * 16)],
+  ).join("");
+}
+
+export interface WithUserOptions {
+  permissions: string[];
+  /** Unused unless you add an entitlement layer. Accepted so the shared
+   *  grid can call this with the same shape it uses for the other app. */
+  features?: string[];
+  isGlobal?: boolean;
+  roleName?: string;
+}
+
+/**
+ * Synthesize a user for ONE assertion.
+ *
+ * Seeds the permission cache and points the mocked verifier at a matching
+ * token. `_seedCacheForTesting` CLEARS before seeding, so every role an
+ * assertion needs has to be seeded in this one call.
+ */
+export function withUser(opts: WithUserOptions): { userId: string; roleName: string } {
+  const roleName = opts.roleName ?? ROLE_UNDER_TEST;
+  const userId = objectIdHex();
+
+  _seedCacheForTesting({
+    [roleName]: {
+      permissions: opts.permissions,
+      // Defaults to FALSE. A global role bypasses every permission check here,
+      // so defaulting it on would make every denial assertion pass vacuously.
+      isGlobal: opts.isGlobal ?? false,
+    },
+  });
+
+  mockVerify.mockReset();
+  mockVerify.mockResolvedValue({
+    id: userId,
+    email: `${userId}@example.com`,
+    roles: roleName,
+  } as never);
+
+  return { userId, roleName };
+}
+
+/** No valid token — the 401 path. */
+export function withoutUser(): void {
+  mockVerify.mockReset();
+  mockVerify.mockRejectedValue(new Error("No token"));
+  _seedCacheForTesting({});
+}
+
+// ─── The app ─────────────────────────────────────────────────────────────────
+
+/**
+ * A fresh app with every router the manifest reaches, mounted exactly as
+ * index.ts mounts it. Public routers (health, research, affirmations) are left
+ * out: the manifest excludes public routes, so nothing here would reach them.
+ */
+export function buildTestAppRaw(): Express {
+  const app: Express = express();
+  app.use(express.json({ limit: "10mb" }));
+
+  app.use("/api/users", userRoutes);
+  // ...and your own routers here.
+
+  // Mirrors index.ts: read `code`, then `statusCode`, then `status`, then 500.
+  app.use(
+    (
+      err: { code?: number; statusCode?: number; status?: number; message?: string },
+      _req: express.Request,
+      res: express.Response,
+      _next: express.NextFunction,
+    ) => {
+      const status =
+        typeof err.code === "number" ? err.code
+        : typeof err.statusCode === "number" ? err.statusCode
+        : typeof err.status === "number" ? err.status
+        : 500;
+      res.status(status).json({ message: err.message });
+    },
+  );
+
+  return app;
+}
+
+export function buildTestApp() {
+  return supertest(buildTestAppRaw());
+}

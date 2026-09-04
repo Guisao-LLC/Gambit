@@ -1,0 +1,174 @@
+/**
+ * The signed-in user's own account — __APP_NAME__.
+ *
+ * Every endpoint here acts on `req.user.id` and NEVER on an id from the body
+ * or params. That is what makes these routes safe to mount as
+ * authenticate-only: there is no id to tamper with, so no permission is needed
+ * to stop one person editing another's account.
+ *
+ * The RULES — what makes a password acceptable, what makes an image storable —
+ * come from `@guisao-llc/gambit-account`, so they are the same functions the
+ * signup path applies. This file is the part that knows about Mongoose, bcrypt
+ * and `req`, which is why those rules are not in here.
+ */
+
+import { RequestHandler } from "express";
+import bcrypt from "bcrypt";
+import { checkNewPassword, checkAvatarUpload, stripDataUrlPrefix } from "@guisao-llc/gambit-account";
+import HttpError from "../util/errors/http-error";
+import { Users } from "../models/user-model";
+
+/** The fields the profile screen needs, and nothing more. */
+const PROFILE_FIELDS = "name email phoneNumber roles avatar";
+
+/**
+ * Shape the response.
+ *
+ * Never includes `passwordHash`, `resetToken` or `magicToken`. Also excludes
+ * `intention`: it is a signup-time segmentation variable that grants nothing,
+ * and the model asks that it not be rendered anywhere it could be mistaken for
+ * a role — a profile page is exactly such a place.
+ */
+function toProfileResponse(user: Record<string, unknown>) {
+  return {
+    id: String(user._id),
+    name: user.name,
+    email: user.email,
+    phoneNumber: user.phoneNumber ?? "",
+    // Read-only here. A profile page shows what you are; it does not let you
+    // change it, and the server would refuse anyway — see updateMyProfile.
+    roles: user.roles ?? "",
+    avatar: user.avatar ?? null,
+  };
+}
+
+export const getMyProfile: RequestHandler = async (req, res, next) => {
+  try {
+    const user = await Users.findById(req.user!.id).select(PROFILE_FIELDS).lean();
+    if (!user) return next(new HttpError("Account not found", 404));
+    res.json({ message: toProfileResponse(user as Record<string, unknown>) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update the caller's own profile.
+ *
+ * An EXPLICIT allowlist, not a spread of the body. These routes are
+ * authenticate-only, so spreading `req.body` would let any signed-in user
+ * grant themselves a role, flip `isVerified`, or overwrite their own password
+ * hash with a value they chose.
+ */
+export const updateMyProfile: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, phoneNumber } = req.body ?? {};
+    const update: Record<string, unknown> = {};
+
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (trimmed.length < 2) return next(new HttpError("Enter your name", 400));
+      update.name = trimmed;
+    }
+    if (phoneNumber !== undefined) update.phoneNumber = String(phoneNumber).trim();
+
+    if (Object.keys(update).length === 0) {
+      return next(new HttpError("Nothing to update", 400));
+    }
+
+    const user = await Users.findByIdAndUpdate(
+      req.user!.id,
+      { $set: update },
+      { new: true, runValidators: true },
+    )
+      .select(PROFILE_FIELDS)
+      .lean();
+    if (!user) return next(new HttpError("Account not found", 404));
+
+    res.json({ message: toProfileResponse(user as Record<string, unknown>) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** Replace the caller's profile picture. */
+export const updateMyAvatar: RequestHandler = async (req, res, next) => {
+  try {
+    const { base64, mime } = req.body ?? {};
+    const check = checkAvatarUpload({
+      mime: String(mime ?? ""),
+      base64: String(base64 ?? ""),
+    });
+    if (!check.ok) return next(new HttpError(check.reason ?? "Invalid image", 400));
+
+    // Stored WITHOUT the `data:` prefix, so the value is a payload rather than
+    // a half-parsed URL; the client rebuilds the prefix from `mime`. Keeping
+    // the prefix would let a caller declare one type in `mime` and a different
+    // one inside the string — and the browser believes the string.
+    const user = await Users.findByIdAndUpdate(
+      req.user!.id,
+      { $set: { avatar: { base64: stripDataUrlPrefix(String(base64)), mime: String(mime) } } },
+      { new: true },
+    )
+      .select("avatar")
+      .lean();
+    if (!user) return next(new HttpError("Account not found", 404));
+
+    res.json({ message: { avatar: (user as { avatar?: unknown }).avatar ?? null } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMyAvatar: RequestHandler = async (req, res, next) => {
+  try {
+    await Users.findByIdAndUpdate(req.user!.id, { $unset: { avatar: 1 } });
+    res.json({ message: { avatar: null } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Change the caller's own password.
+ *
+ * Requires the CURRENT password even though the caller is already
+ * authenticated. A token can be a borrowed laptop or a stolen session, and
+ * re-proving the password is what stops such a session locking the real owner
+ * out of their own account.
+ */
+export const changeMyPassword: RequestHandler = async (req, res, next) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword ?? "");
+    const newPassword = String(req.body?.newPassword ?? "");
+
+    // The same policy signup uses, from the shared package — so the rule a
+    // person meets when they join is the rule they meet when they change it.
+    const policy = checkNewPassword(newPassword, currentPassword);
+    if (!policy.ok) return next(new HttpError(policy.reason ?? "Invalid password", 400));
+
+    const user = await Users.findById(req.user!.id).select("passwordHash");
+    if (!user) return next(new HttpError("Account not found", 404));
+
+    const matches = user.passwordHash
+      ? await bcrypt.compare(currentPassword, user.passwordHash)
+      : false;
+    if (!matches) {
+      // Deliberately not "no password set" or "wrong password" — either would
+      // tell a borrowed session something about an account it does not own.
+      return next(new HttpError("Your current password is incorrect", 400));
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    // Any outstanding reset link is invalidated: the account has just been
+    // proven to be under its owner's control, so a link emailed before that
+    // must not still work.
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+    await user.save();
+
+    res.json({ message: "Password updated" });
+  } catch (error) {
+    next(error);
+  }
+};

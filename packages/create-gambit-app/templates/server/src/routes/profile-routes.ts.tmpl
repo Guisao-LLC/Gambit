@@ -1,0 +1,30 @@
+import express from "express";
+import { authenticate } from "../middleware/authenticate";
+import {
+  getMyProfile,
+  updateMyProfile,
+  updateMyAvatar,
+  deleteMyAvatar,
+  changeMyPassword,
+} from "../controllers/profile-controller";
+
+const router = express.Router();
+
+/**
+ * Your own account.
+ *
+ * `authenticate` only, no permission — deliberate, not an omission. Every
+ * handler acts on `req.user.id`, so there is no id a caller could substitute:
+ * the narrowing IS the authorization. Gating this would mean somebody could be
+ * locked out of changing their own password because an administrator forgot to
+ * grant a key.
+ */
+router.use(authenticate);
+
+router.get("/", getMyProfile);
+router.patch("/", updateMyProfile);
+router.put("/avatar", updateMyAvatar);
+router.delete("/avatar", deleteMyAvatar);
+router.post("/password", changeMyPassword);
+
+export default router;

@@ -1,0 +1,12 @@
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    globals: true,
+    include: ["src/tests/**/*.test.ts"],
+    // Long enough that a hung request fails as a timeout rather than as a
+    // confusing pass; short enough that a missing mock is felt immediately.
+    testTimeout: 15000,
+  },
+});
