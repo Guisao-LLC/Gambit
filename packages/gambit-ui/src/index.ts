@@ -54,3 +54,15 @@ export type {
   RoleFormValues,
   RolesLabels,
 } from "./roles/types";
+
+/**
+ * Person identity: one validation rule and one fields component, shared by
+ * every form that enrolls or invites someone. Built on
+ * @guisao-llc/gambit-person's `isPlausibleEmail` — the same permissive email
+ * check the server runs — so a form can't disagree with the API about what
+ * counts as a usable address.
+ */
+export { createPersonIdentitySchema } from "./personIdentity";
+export type { PersonIdentitySchemaOptions } from "./personIdentity";
+export { PersonIdentityFields } from "./PersonIdentityFields";
+export type { PersonIdentityFieldsProps } from "./PersonIdentityFields";

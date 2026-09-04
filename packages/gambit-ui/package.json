@@ -32,7 +32,9 @@
     "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
   },
   "dependencies": {
-    "@guisao-llc/gambit-account": "^0.3.0"
+    "@guisao-llc/gambit-account": "^0.3.0",
+    "@guisao-llc/gambit-person": "^0.1.0",
+    "zod": "^4.0.17"
   },
   "peerDependencies": {
     "@emotion/react": "^11",
