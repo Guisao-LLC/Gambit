@@ -16,12 +16,27 @@ than trusted (see **The rule**, below).
 ```
 packages/
   gambit-auth/        HTTP errors, JWT, request authentication
+  gambit-cascade/     deleting a thing deletes what hung off it
+  gambit-rbac/        roles, permissions, the authorize middleware, the cache
+  gambit-account/     what an account IS — fields, password and avatar rules
+  gambit-person/      who holds one — the person record, and enrolling them
+  gambit-settings/    app settings with typed defaults
+  gambit-testing/     the RBAC route grid every consuming app runs
+  gambit-ui/          React panels built on the rules above
+  create-gambit-app/  the generator that starts a new app with all of it
 ```
 
-More land in dependency order. The graph across the modules staged for
-extraction is shallow — most packages depend on nothing, `ai` and `data` depend
-on `auth`, `rbac` depends on `auth` and `cascade` — so `gambit-auth` goes first
-because everything else needs it.
+They landed in dependency order, and the graph is shallow: most depend on
+nothing, `rbac` depends on `auth` and `cascade`, `person` and `ui` depend on
+`account`. `gambit-auth` went first because everything else needs it.
+
+`account` and `person` are the pair worth explaining, since the names do not
+separate themselves. An account is a **credential**; a person is **who holds
+it**. An app has accounts with no person behind them — a service account, a
+seed administrator — and people who do not have an account yet.
+
+Still staged for extraction and unpackaged: `email`, `events`, `change-log`,
+`data`, `ai`, `diagnostics`.
 
 ## Install
 

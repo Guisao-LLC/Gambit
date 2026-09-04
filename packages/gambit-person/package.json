@@ -1,0 +1,63 @@
+{
+  "name": "@guisao-llc/gambit-person",
+  "version": "0.1.0",
+  "description": "The person behind an account: the record they get, and the enrollment that creates their login and hands back a one-time link.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git",
+    "directory": "packages/gambit-person"
+  },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-person",
+  "keywords": [
+    "person",
+    "enrollment",
+    "onboarding",
+    "invitation",
+    "magic-link",
+    "mongoose"
+  ],
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "peerDependencies": {
+    "mongoose": ">=8"
+  },
+  "peerDependenciesMeta": {
+    "mongoose": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mongoose": {
+      "types": "./dist/mongoose.d.ts",
+      "default": "./dist/mongoose.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "mongoose": [
+        "dist/mongoose.d.ts"
+      ]
+    }
+  }
+}

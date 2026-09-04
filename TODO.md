@@ -49,9 +49,14 @@ platform-bound are now shims with legitimate app coupling — `permission-cache`
 imports the app's `Roles`, `roles-model` declares its tenant. It passes, so
 nothing is broken; it is describing an older arrangement.
 
-**Seven modules are still staged for extraction and unpackaged**: `email`,
-`events`, `person`, `change-log`, `data`, `ai`, `diagnostics`. All are leaf
-nodes except `data` and `ai`, which depend on `auth`, so any order works.
+**Six modules are still staged for extraction and unpackaged**: `email`,
+`events`, `change-log`, `data`, `ai`, `diagnostics`. All are leaf nodes except
+`data` and `ai`, which depend on `auth`, so any order works.
+
+**`gambit-person@0.1.0` is built and tested but not published, and no app
+consumes it yet.** Both apps still enroll people by hand. Adopting it is a
+behaviour change in each — see their own TODOs, which is where the specifics
+belong.
 
 ## Not doing, and why
 
