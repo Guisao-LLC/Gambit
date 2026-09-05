@@ -4,25 +4,37 @@ Package work. App-specific items live in each app's own repo — deliberately,
 since this one is public and some of them describe gaps that should not be
 advertised.
 
-## Publish — two apps are blocked on it
+## Publish `gambit-ui@0.3.0` — four consumers are still blocked on it
 
-`gambit-ui` gained the roles surface and the person-identity fields
-(quick 260904-jtu) and needs **0.2.0 → 0.3.0**. `gambit-person@0.1.0` has never
-been published at all.
+`gambit-person@0.1.0` is now on the registry, `displayName` included. The
+publish run **skipped `gambit-ui`**: the roles surface and the person-identity
+fields landed in its source without a version bump, so `isPublished` saw 0.2.0
+already published and moved on. The tarball currently serving as 0.2.0 holds
+only `ProfileDetailsCard`, `ChangePasswordCard` and `types` — none of
+`RolesPanel`, `PermissionMatrix`, `RoleFormDialog`, `PersonIdentityFields` or
+`createPersonIdentitySchema`.
 
-Until both are on the registry, **neither consuming app can be built** by anyone
-who does not have this repo checked out beside them: both point at `file:`
-links, and a clean CI container will fail at install. That is a deploy blocker
-in each, recorded in their own TODOs.
+So the version an app would install from the registry does not contain the
+components it imports, which is why every `file:` link has to stay.
+
+The version is now bumped to 0.3.0 and committed. One command left:
 
 ```bash
 node scripts/publish-all.mjs --web
 ```
 
-Needs npm 2FA. Afterwards each app swaps its `file:` links back to caret ranges
-— remembering that npm's caret on `0.x` admits PATCH ONLY, so `^0.2.0` will not
-accept `0.3.0` — and deletes the link scaffolding, all of it commented
-TEMPORARY.
+Needs npm 2FA. Until it runs, **neither app's client NOR server builds** without
+this repo checked out beside it — four `package.json` files carry `file:` links.
+
+Afterwards each app swaps those links back to caret ranges — remembering that
+npm's caret on `0.x` admits PATCH ONLY, so `^0.2.0` will not accept `0.3.0` —
+and deletes the link scaffolding, all of it commented TEMPORARY.
+
+**A lesson worth keeping:** `publish-all` silently skips a package whose version
+already exists. That is correct behaviour (republishing a version is not
+allowed), but it means *forgetting a version bump looks identical to a
+successful publish*. Bump the version in the same commit as the change, or the
+next publish quietly does nothing.
 
 ### `gambit-ui` ships CommonJS, and that is what broke both apps
 
@@ -35,15 +47,6 @@ Publishing makes the symptom go away, so this is not urgent — but a
 browser-facing package emitting only CJS is still the wrong default, and every
 consumer pays for it in bundling. Worth an ESM build (or dual output with an
 `exports` map) before 1.0.
-
-## Publish `create-gambit-app`
-
-`0.1.0` is built, tested and pushed but not on the registry. Until it is,
-`npm create @guisao-llc/gambit-app` only works on the machine that built it.
-
-```bash
-node scripts/publish-all.mjs --web
-```
 
 ## Run a generated app against a real database
 
@@ -85,10 +88,11 @@ nothing is broken; it is describing an older arrangement.
 `events`, `change-log`, `data`, `ai`, `diagnostics`. All are leaf nodes except
 `data` and `ai`, which depend on `auth`, so any order works.
 
-**`gambit-person@0.1.0` is built and tested but not published.** The server-side
-enrollment factory has no consumer yet — both apps still enroll people by hand,
-and adopting it is a behaviour change in each. Its `checkIdentity` half IS
-consumed, through `gambit-ui`.
+**`gambit-person@0.1.0` is published and fully adopted** (quick 260904-nf1).
+Every account-creation path in both apps runs through `createEnrollment`, and
+each app has exactly one `Users.create` call site left — inside the adapter that
+feeds it. Note that 0.1.0 is now immutable on the registry, so the next change
+to this package needs a version bump before it can ship.
 
 ## Not doing, and why
 
