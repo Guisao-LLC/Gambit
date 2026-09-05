@@ -413,6 +413,62 @@ test("the domain record is created with the account's id and returned", async ()
   assert.deepEqual(result.attached, { userId: "acct-1", cards: [] });
 });
 
+// ---------------------------------------------------------------------------
+// displayName — quick 260904-nf1: joining is safe, splitting is a guess, and
+// a caller who never split in the first place must not be forced to.
+// ---------------------------------------------------------------------------
+
+test("displayName, when supplied, is stored verbatim instead of the joined name", async () => {
+  const store = fakeStore();
+  const enroll = enrollment(store);
+
+  await enroll({
+    firstName: "Ada",
+    lastName: "Lovelace-Hyphenated",
+    email: "ada@example.com",
+    displayName: "Ada Lovelace-Hyphenated",
+    credential: credentials.chosen("a good long passphrase"),
+  });
+
+  assert.equal(store.rows[0].name, "Ada Lovelace-Hyphenated");
+});
+
+test("a mononym signup stores the mononym, not the doubled join", () => {
+  // The regression this field exists to fix: splitFullName's fallback repeats
+  // a single-word name as both halves so checkIdentity's non-empty rule is
+  // satisfied ("Madonna" -> firstName "Madonna" / lastName "Madonna"). Without
+  // displayName, joinName would produce the visible defect "Madonna Madonna".
+  return (async () => {
+    const store = fakeStore();
+    const enroll = enrollment(store);
+
+    await enroll({
+      firstName: "Madonna",
+      lastName: "Madonna",
+      email: "madonna@example.com",
+      displayName: "Madonna",
+      credential: credentials.chosen("a good long passphrase"),
+    });
+
+    assert.equal(store.rows[0].name, "Madonna");
+    assert.notEqual(store.rows[0].name, "Madonna Madonna");
+  })();
+});
+
+test("omitting displayName still joins first + last, unchanged", async () => {
+  const store = fakeStore();
+  const enroll = enrollment(store);
+
+  await enroll({
+    firstName: "Ada",
+    lastName: "Lovelace",
+    email: "ada2@example.com",
+    credential: credentials.chosen("a good long passphrase"),
+  });
+
+  assert.equal(store.rows[0].name, "Ada Lovelace");
+});
+
 test("a self-service signup gets no token and keeps its typed password", async () => {
   const store = fakeStore();
   const result = await enrollment(store)({

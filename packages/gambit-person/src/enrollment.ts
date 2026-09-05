@@ -145,6 +145,25 @@ export interface EnrollmentInput<TAccount, TAttached> {
   /** The organization, by the field name this app's schema uses. */
   tenant?: { field: string; value: unknown };
 
+  /**
+   * The account's stored `name`, exactly as the caller supplies it.
+   *
+   * `joinName(identity.firstName, identity.lastName)` is the default because
+   * joining is safe and splitting is a guess — that is why `personFields`
+   * stores no `name` at all. But some callers never split in the first
+   * place: a signup form that collects one "Full Name" field already HAS the
+   * correct display name, and forcing it through a first/last split just to
+   * satisfy `checkIdentity` (which requires both non-empty) and then
+   * rejoining would destroy and reconstruct something that was already
+   * right. A mononym is the sharp case — splitting "Madonna" into a
+   * first/last pair and rejoining produces "Madonna Madonna", a visible data
+   * defect, not a cosmetic gap, because `name` is written to the account.
+   *
+   * When supplied (a non-empty string), this WINS over the joined name.
+   * When absent, behavior is exactly as before this field existed.
+   */
+  displayName?: string;
+
   credential: CredentialSpec;
 
   /** Anything else this app's account carries — working hours, zones. */
@@ -237,9 +256,14 @@ export function createEnrollment<TAccount>(deps: EnrollmentDeps<TAccount>) {
     const grant = resolveCredential(input.credential, { randomToken, now });
     const passwordHash = await hashPassword(grant.plaintext);
 
+    const hasDisplayName =
+      typeof input.displayName === "string" && input.displayName.trim().length > 0;
+
     const doc: Record<string, unknown> = {
       ...input.accountFields,
-      name: joinName(identity.firstName, identity.lastName),
+      name: hasDisplayName
+        ? (input.displayName as string)
+        : joinName(identity.firstName, identity.lastName),
       email: identity.email,
       passwordHash,
       // An enrolled account has not proven it owns the address yet — following
