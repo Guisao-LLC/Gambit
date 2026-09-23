@@ -12,9 +12,9 @@
  *     from "@guisao-llc/gambit-account/mongoose";
  */
 
-export { baseAccountFields, applyAccountStatics } from "./base-account-fields";
+export { baseAccountFields, applyAccountStatics } from "./base-account-fields.js";
 export type {
   BaseAccount,
   AccountStatics,
   BaseAccountFieldsConfig,
-} from "./base-account-fields";
+} from "./base-account-fields.js";

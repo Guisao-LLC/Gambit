@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { HttpError } from "./http-error";
+import { HttpError } from "./http-error.js";
 
 /**
  * Authentication for routes that need a valid token but no specific permission.

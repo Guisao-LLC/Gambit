@@ -1,6 +1,6 @@
 import { Request, RequestHandler } from "express";
 import { HttpError } from "@guisao-llc/gambit-auth";
-import { CachedRole, getCachedRole, hasAnyPermission, hasPermission } from "./permission-cache";
+import { CachedRole, getCachedRole, hasAnyPermission, hasPermission } from "./permission-cache.js";
 
 /**
  * The authorization middleware pair.

@@ -15,8 +15,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc --build",
-    "clean": "tsc --build --clean",
+    "build": "tsc --build && npm run build:esm --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present",
     "rebuild": "npm run clean && npm run build",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "tsc --build --dry",

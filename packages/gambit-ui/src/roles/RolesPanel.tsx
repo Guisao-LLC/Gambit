@@ -20,7 +20,7 @@ import AddIcon from "@mui/icons-material/Add";
 import PublicIcon from "@mui/icons-material/Public";
 import BusinessIcon from "@mui/icons-material/Business";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
-import { RoleFormDialog } from "./RoleFormDialog";
+import { RoleFormDialog } from "./RoleFormDialog.js";
 import {
   DEFAULT_ROLES_LABELS,
   PermissionRecord,
@@ -28,7 +28,7 @@ import {
   RoleFormValues,
   RoleRecord,
   RolesLabels,
-} from "./types";
+} from "./types.js";
 
 export interface RolesPanelProps {
   roles: RoleRecord[];

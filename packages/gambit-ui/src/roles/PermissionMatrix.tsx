@@ -7,7 +7,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { DEFAULT_ROLES_LABELS, PermissionRecord, RoleDisplayGroup, RolesLabels } from "./types";
+import { DEFAULT_ROLES_LABELS, PermissionRecord, RoleDisplayGroup, RolesLabels } from "./types.js";
 
 // 3-column matrix per the "pages always render" agreement both hosts this was
 // extracted from share. View column dropped: page visibility + nav gating are

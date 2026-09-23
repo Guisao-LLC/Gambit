@@ -1,5 +1,5 @@
 import { ErrorRequestHandler, RequestHandler } from "express";
-import { HttpError } from "./http-error";
+import { HttpError } from "./http-error.js";
 
 /**
  * Terminal error handler. Mount LAST, after every route and every other

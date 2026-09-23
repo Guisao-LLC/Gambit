@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { HttpError } from "@guisao-llc/gambit-auth";
-import { CachedRole, getCachedRole, hasAnyPermission, hasPermission } from "./permission-cache";
+import { CachedRole, getCachedRole, hasAnyPermission, hasPermission } from "./permission-cache.js";
 
 /**
  * @guisao-llc/gambit-rbac
@@ -24,31 +24,31 @@ export {
   refreshCache,
   _seedCacheForTesting,
   _resetForTesting,
-} from "./permission-cache";
-export type { CachedRole, LoadedRole, PermissionCacheConfig } from "./permission-cache";
+} from "./permission-cache.js";
+export type { CachedRole, LoadedRole, PermissionCacheConfig } from "./permission-cache.js";
 
-export { createAuthorize } from "./authorize";
+export { createAuthorize } from "./authorize.js";
 export type {
   AuthClaims,
   AuthorizeConfig,
   EntitlementCheck,
   EntitlementContext,
-} from "./authorize";
+} from "./authorize.js";
 
-export { roleFields, permissionFields, PERMISSION_ACTIONS } from "./schema";
+export { roleFields, permissionFields, PERMISSION_ACTIONS } from "./schema.js";
 export type {
   RoleFieldsConfig,
   PermissionFieldsConfig,
   PermissionAction,
-} from "./schema";
+} from "./schema.js";
 
-export { buildRoleDeletion, buildPermissionDeletion } from "./cascades";
+export { buildRoleDeletion, buildPermissionDeletion } from "./cascades.js";
 export type {
   RoleDeletionConfig,
   PermissionDeletionConfig,
   RoleCollection,
   PermissionCollection,
-} from "./cascades";
+} from "./cascades.js";
 
 // ── Direct questions, for code that is not middleware ────────────────────────
 

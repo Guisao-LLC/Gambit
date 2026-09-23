@@ -4,49 +4,47 @@ Package work. App-specific items live in each app's own repo — deliberately,
 since this one is public and some of them describe gaps that should not be
 advertised.
 
-## Publish `gambit-ui@0.3.0` — four consumers are still blocked on it
+## Before the merge at `1.0`
 
-`gambit-person@0.1.0` is now on the registry, `displayName` included. The
-publish run **skipped `gambit-ui`**: the roles surface and the person-identity
-fields landed in its source without a version bump, so `isPublished` saw 0.2.0
-already published and moved on. The tarball currently serving as 0.2.0 holds
-only `ProfileDetailsCard`, `ChangePasswordCard` and `types` — none of
-`RolesPanel`, `PermissionMatrix`, `RoleFormDialog`, `PersonIdentityFields` or
-`createPersonIdentitySchema`.
+Three of the prerequisites are done (below). What is left:
 
-So the version an app would install from the registry does not contain the
-components it imports, which is why every `file:` link has to stay.
+**Boot a generated app against a real database.** Still the item under "Run a
+generated app…". Repackaging on top of an unexercised path means a later break
+is ambiguous — you would not know whether the merge caused it.
 
-The version is now bumped to 0.3.0 and committed. One command left:
+**Decide whether the staged six are in or out.** `email` and `ai` bring
+`nodemailer` and `googleapis`; `googleapis` alone is ~100MB installed. After a
+`1.0` that boundary is expensive to move, which is the whole reason `1.0` is the
+revisit point.
 
-```bash
-node scripts/publish-all.mjs --web
-```
+### Done
 
-Needs npm 2FA. Until it runs, **neither app's client NOR server builds** without
-this repo checked out beside it — four `package.json` files carry `file:` links.
+**Dual CJS/ESM output with an `exports` map**, every package. See **Module
+format** in the README for how it is wired and the two rules that keep it
+working. This was the real blocker: a single package lives or dies on subpath
+exports, and six of the nine had no `exports` map at all. It also closes the
+CommonJS-only problem that took both apps down.
 
-Afterwards each app swaps those links back to caret ranges — remembering that
-npm's caret on `0.x` admits PATCH ONLY, so `^0.2.0` will not accept `0.3.0` —
-and deletes the link scaffolding, all of it commented TEMPORARY.
+**`gambit-cascade` no longer forces a Mongoose install.** It names Mongoose in
+exactly one place — `import type`, as the default type arguments of its two
+generics — so nothing is emitted and `SequentialCascade<[string, MySession]>`
+compiles with Mongoose absent. npm 7+ auto-installs a required peer, so the
+declaration was costing every consumer an install it never used. Optional now.
 
-**A lesson worth keeping:** `publish-all` silently skips a package whose version
-already exists. That is correct behaviour (republishing a version is not
-allowed), but it means *forgetting a version bump looks identical to a
-successful publish*. Bump the version in the same commit as the change, or the
-next publish quietly does nothing.
+**Version drift between the two apps is closed.** One app was pinned to
+`gambit-rbac@^0.1.0` while the other ran `0.2.0`, and a caret on `0.x` admits
+patch only — so it would never have caught up on its own. Verified
+behaviour-neutral before moving it: `0.2.0` is additive, an app that does not
+pass `isSuperRole` behaves exactly as before, and that app does not.
 
-### `gambit-ui` ships CommonJS, and that is what broke both apps
+### Not splitting rbac, settings or auth
 
-No `module` field, no `exports` map. Installed from the registry it lands in
-node_modules where Vite applies CommonJS interop and its named exports resolve;
-as a `file:` link outside a project root, Vite treats it as source, skips the
-interop, and Rollup reports its exports as missing.
-
-Publishing makes the symptom go away, so this is not urgent — but a
-browser-facing package emitting only CJS is still the wrong default, and every
-consumer pays for it in bundling. Worth an ESM build (or dual output with an
-`exports` map) before 1.0.
+Considered while doing the above, and deliberately not done. The `/mongoose`
+subpath exists to keep a package root importable from a **browser**; those three
+are server-only end to end, have no browser consumer and no prospect of one, and
+both apps import `roleFields` and `permissionFields` from the rbac root today.
+Moving them would be a breaking change bought with nothing. Revisit only if
+something in a browser ever needs them.
 
 ## Run a generated app against a real database
 
@@ -96,12 +94,22 @@ to this package needs a version bump before it can ship.
 
 ## Not doing, and why
 
-**Merging the packages into one.** Considered and deferred. Merging is
-mechanical; splitting is not — and the boundaries are still moving. Revisit at
-`1.0`, with subpath exports and `npm deprecate` on the individual packages.
+**Merging into ONE package.** Two, not one — and the reason is the
+browser/server split rather than the peer union.
 
-The peer-dependency union across everything staged is `express`,
-`jsonwebtoken`, `mongoose`, `nodemailer`, `googleapis`, `zod`. `googleapis`
-alone is ~100MB installed, so a single package means an app wanting only the
-password rules pulls the Gmail API surface — unless every peer is optional,
-which costs the package the ability to state honestly what it needs.
+`gambit-ui` is browser code needing React, MUI and emotion; the rest is Node
+code needing Express and Mongoose. npm 7+ installs peers automatically, so a
+single package means a server app installs MUI and a browser app installs
+Mongoose, unless every peer is marked optional — which costs the package the
+ability to state honestly what it needs.
+
+So the target is `@guisao-llc/gambit` (server) plus `@guisao-llc/gambit-ui`
+(browser): two packages, down from nine, with `npm deprecate` pointing the old
+names at them. `create-gambit-app` stays separate regardless — it is a CLI run
+via `npx` and cannot be a subpath — and `gambit-testing` has no business in a
+runtime package.
+
+Note that the peer union argument as originally written was wrong: `googleapis`
+and `nodemailer` belong to the six modules still *staged*, not to anything
+published. It is a reason to decide their boundary before `1.0`, not a reason
+against merging what exists.

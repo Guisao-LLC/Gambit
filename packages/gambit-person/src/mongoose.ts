@@ -12,5 +12,5 @@
  *   import { personFields } from "@guisao-llc/gambit-person/mongoose";
  */
 
-export { personFields, personAddressSchema } from "./person-fields";
-export type { PersonAddress, PersonFieldsConfig } from "./person-fields";
+export { personFields, personAddressSchema } from "./person-fields.js";
+export type { PersonAddress, PersonFieldsConfig } from "./person-fields.js";

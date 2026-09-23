@@ -23,14 +23,14 @@
  * whatever palette and typography the host provides.
  */
 
-export { ProfileDetailsCard } from "./ProfileDetailsCard";
-export type { ProfileDetailsCardProps } from "./ProfileDetailsCard";
+export { ProfileDetailsCard } from "./ProfileDetailsCard.js";
+export type { ProfileDetailsCardProps } from "./ProfileDetailsCard.js";
 
-export { ChangePasswordCard } from "./ChangePasswordCard";
-export type { ChangePasswordCardProps } from "./ChangePasswordCard";
+export { ChangePasswordCard } from "./ChangePasswordCard.js";
+export type { ChangePasswordCardProps } from "./ChangePasswordCard.js";
 
-export { DEFAULT_LABELS } from "./types";
-export type { Profile, Avatar, ProfileClient, ProfileLabels } from "./types";
+export { DEFAULT_LABELS } from "./types.js";
+export type { Profile, Avatar, ProfileClient, ProfileLabels } from "./types.js";
 
 /**
  * The roles surface: a permission matrix, a merged create/edit dialog, and
@@ -40,20 +40,20 @@ export type { Profile, Avatar, ProfileClient, ProfileLabels } from "./types";
  * "new role" trigger — is threaded through as a prop, never picked. See each
  * component's own doc comment for the specific seam.
  */
-export { PermissionMatrix } from "./roles/PermissionMatrix";
-export type { PermissionMatrixProps } from "./roles/PermissionMatrix";
-export { RoleFormDialog } from "./roles/RoleFormDialog";
-export type { RoleFormDialogProps } from "./roles/RoleFormDialog";
-export { RolesPanel } from "./roles/RolesPanel";
-export type { RolesPanelProps } from "./roles/RolesPanel";
-export { DEFAULT_ROLES_LABELS } from "./roles/types";
+export { PermissionMatrix } from "./roles/PermissionMatrix.js";
+export type { PermissionMatrixProps } from "./roles/PermissionMatrix.js";
+export { RoleFormDialog } from "./roles/RoleFormDialog.js";
+export type { RoleFormDialogProps } from "./roles/RoleFormDialog.js";
+export { RolesPanel } from "./roles/RolesPanel.js";
+export type { RolesPanelProps } from "./roles/RolesPanel.js";
+export { DEFAULT_ROLES_LABELS } from "./roles/types.js";
 export type {
   RoleRecord,
   PermissionRecord,
   RoleDisplayGroup,
   RoleFormValues,
   RolesLabels,
-} from "./roles/types";
+} from "./roles/types.js";
 
 /**
  * Person identity: one validation rule and one fields component, shared by
@@ -62,7 +62,7 @@ export type {
  * check the server runs — so a form can't disagree with the API about what
  * counts as a usable address.
  */
-export { createPersonIdentitySchema } from "./personIdentity";
-export type { PersonIdentitySchemaOptions } from "./personIdentity";
-export { PersonIdentityFields } from "./PersonIdentityFields";
-export type { PersonIdentityFieldsProps } from "./PersonIdentityFields";
+export { createPersonIdentitySchema } from "./personIdentity.js";
+export type { PersonIdentitySchemaOptions } from "./personIdentity.js";
+export { PersonIdentityFields } from "./PersonIdentityFields.js";
+export type { PersonIdentityFieldsProps } from "./PersonIdentityFields.js";

@@ -82,7 +82,7 @@ stale build.
 
 ```bash
 npm install        # once, at the root — npm workspaces
-npm run build      # tsc --build across all packages
+npm run build      # both module formats, across all packages
 npm test           # each package's own suite
 ```
 
@@ -90,6 +90,44 @@ Tests run against `dist/`, not `src/`, deliberately: they assert what a consumer
 actually receives after install — the compiled entrypoint, the exports
 `package.json` points at, the runtime behavior. A test against source can pass
 while the published artifact is broken.
+
+## Module format
+
+Every package ships **both** formats from one source tree:
+
+```
+dist/           CommonJS + the .d.ts files, shared by both halves
+dist/esm/       the same code as ES modules
+```
+
+`exports` picks between them — `require` gets `dist/`, `import` gets `dist/esm/`
+— and `main`/`module`/`types` stay as they were, so a resolver too old to read
+`exports` still finds the CommonJS build. The type declarations are emitted once,
+by the CommonJS pass, because two identical copies could only ever disagree.
+
+This is not housekeeping. CommonJS-only is what took both apps down once:
+installed from the registry a CJS package lands in `node_modules` and Vite
+applies interop, but as a `file:` link it is treated as source, the interop is
+skipped, and Rollup reports every named export as missing. `gambit-ui` is
+browser code, and a browser package that cannot be tree-shaken makes every
+consumer pay for the parts it does not import.
+
+Two rules keep the dual build working:
+
+- **Relative imports are written with a `.js` extension** — `./password-policy.js`,
+  not `./password-policy`. TypeScript resolves it back to the `.ts` file and
+  emits the specifier verbatim. Node's ESM loader requires the extension and
+  `require` tolerates it, so it is the only spelling that satisfies both.
+- **`dist/esm/package.json` is generated** (`scripts/mark-esm.mjs`) and contains
+  `{"type": "module"}`. Without it Node reads those files under the root
+  package's default — CommonJS — and throws on the first `import`.
+
+Anything server-only sits behind its own subpath rather than the root, so the
+root stays importable from a browser: `@guisao-llc/gambit-account/mongoose`,
+`@guisao-llc/gambit-person/mongoose`. That split exists because re-exporting a
+Mongoose schema from the root once dragged Node's `events` into a client bundle
+and killed both apps with `Class extends value undefined` — a stack trace naming
+neither Mongoose nor the package.
 
 ## The rule
 
@@ -128,3 +166,13 @@ tests and hides in the totals rather than failing.
 Packages are versioned independently and pinned by consumers. The point of the
 whole exercise is that the core can change on its own branch without either app
 moving until it chooses to.
+
+Two traps, both of which have already cost something:
+
+- **A caret on a `0.x` version admits PATCH ONLY.** `^0.1.0` will never install
+  `0.2.0`. An app pinned that way does not fall behind loudly — it simply stays
+  where it is, and the gap only shows up when someone compares two apps by hand.
+- **`publish-all` skips a package whose version already exists**, which is
+  correct (a published version is immutable) but means *forgetting a version
+  bump looks exactly like a successful publish*. Bump in the same commit as the
+  change.

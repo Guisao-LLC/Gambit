@@ -14,14 +14,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { PermissionMatrix } from "./PermissionMatrix";
+import { PermissionMatrix } from "./PermissionMatrix.js";
 import {
   DEFAULT_ROLES_LABELS,
   PermissionRecord,
   RoleDisplayGroup,
   RoleFormValues,
   RolesLabels,
-} from "./types";
+} from "./types.js";
 
 export interface RoleFormDialogProps {
   open: boolean;

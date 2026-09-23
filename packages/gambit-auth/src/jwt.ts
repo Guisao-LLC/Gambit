@@ -1,5 +1,5 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { HttpError } from "./http-error";
+import { HttpError } from "./http-error.js";
 
 /**
  * Generic JWT signing and verification.

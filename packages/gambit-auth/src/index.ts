@@ -10,13 +10,13 @@
  * for why that is a rule rather than a preference.
  */
 
-export { HttpError } from "./http-error";
-export { default as HttpErrorDefault } from "./http-error";
+export { HttpError } from "./http-error.js";
+export { default as HttpErrorDefault } from "./http-error.js";
 
-export type { BaseTokenClaims } from "./jwt";
-export { signToken, verifyToken } from "./jwt";
+export type { BaseTokenClaims } from "./jwt.js";
+export { signToken, verifyToken } from "./jwt.js";
 
-export type { AuthenticateConfig } from "./authenticate";
-export { createAuthenticate } from "./authenticate";
+export type { AuthenticateConfig } from "./authenticate.js";
+export { createAuthenticate } from "./authenticate.js";
 
-export { errorHandler, notFound } from "./error-handler";
+export { errorHandler, notFound } from "./error-handler.js";

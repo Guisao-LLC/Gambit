@@ -30,13 +30,13 @@ export {
   joinName,
   isPlausibleEmail,
   checkIdentity,
-} from "./identity";
+} from "./identity.js";
 export type {
   PersonField,
   PersonIdentity,
   IdentityCheck,
   IdentityOptions,
-} from "./identity";
+} from "./identity.js";
 
 export {
   credentials,
@@ -44,19 +44,19 @@ export {
   DEFAULT_RESET_TTL_MS,
   DEFAULT_MAGIC_TTL_MS,
   TOKEN_BYTES,
-} from "./credentials";
+} from "./credentials.js";
 export type {
   CredentialKind,
   CredentialSpec,
   CredentialGrant,
   CredentialSources,
-} from "./credentials";
+} from "./credentials.js";
 
-export { createEnrollment, EnrollmentError } from "./enrollment";
+export { createEnrollment, EnrollmentError } from "./enrollment.js";
 export type {
   AccountStore,
   EnrollmentDeps,
   EnrollmentInput,
   EnrollmentResult,
   EnrollmentErrorCode,
-} from "./enrollment";
+} from "./enrollment.js";

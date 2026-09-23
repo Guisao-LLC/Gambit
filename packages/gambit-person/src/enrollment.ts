@@ -4,12 +4,12 @@ import {
   type IdentityOptions,
   type PersonField,
   type PersonIdentity,
-} from "./identity";
+} from "./identity.js";
 import {
   resolveCredential,
   type CredentialKind,
   type CredentialSpec,
-} from "./credentials";
+} from "./credentials.js";
 
 /**
  * Enrolling a person: create the login, hand back the way in.

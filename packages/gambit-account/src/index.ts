@@ -25,8 +25,8 @@ export {
   MAX_PASSWORD_LENGTH,
   checkNewPassword,
   checkPasswordConfirmation,
-} from "./password-policy";
-export type { PasswordCheck } from "./password-policy";
+} from "./password-policy.js";
+export type { PasswordCheck } from "./password-policy.js";
 
 export {
   MAX_AVATAR_BYTES,
@@ -35,8 +35,8 @@ export {
   base64ByteLength,
   isAllowedAvatarMime,
   checkAvatarUpload,
-} from "./avatar-image";
-export type { AvatarMime, AvatarCheck } from "./avatar-image";
+} from "./avatar-image.js";
+export type { AvatarMime, AvatarCheck } from "./avatar-image.js";
 
 export {
   MAX_CC_RECIPIENTS,
@@ -44,8 +44,8 @@ export {
   normalizeEmailAddress,
   resolveCcRecipients,
   parseAddressList,
-} from "./cc-policy";
-export type { CcResolution } from "./cc-policy";
+} from "./cc-policy.js";
+export type { CcResolution } from "./cc-policy.js";
 
 /**
  * The Mongoose half is NOT re-exported here. Import it from

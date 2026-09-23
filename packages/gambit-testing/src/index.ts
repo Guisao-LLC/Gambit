@@ -23,21 +23,21 @@ export {
   expectDeny403,
   expectAdjacentPermOutcome,
   AUTHORIZE_DENY_MESSAGES,
-} from "./assertions";
-export type { HttpResponseLike } from "./assertions";
+} from "./assertions.js";
+export type { HttpResponseLike } from "./assertions.js";
 
 export {
   resolvePath,
   entriesForPermission,
   pickAdjacentPerm,
   DEFAULT_PARAM_VALUES,
-} from "./manifest";
-export type { RouteEntry, HttpMethod } from "./manifest";
+} from "./manifest.js";
+export type { RouteEntry, HttpMethod } from "./manifest.js";
 
-export { buildPermissionGrid, featuresForRoute } from "./grid";
+export { buildPermissionGrid, featuresForRoute } from "./grid.js";
 export type {
   PermissionGridConfig,
   CatalogPermission,
   RequestAgent,
   TestRequest,
-} from "./grid";
+} from "./grid.js";

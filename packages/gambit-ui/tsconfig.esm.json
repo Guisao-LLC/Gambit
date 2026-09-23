@@ -1,0 +1,20 @@
+// The SECOND pass: the same sources emitted as ES modules into dist/esm.
+//
+// It is a separate config rather than a flag because the two builds disagree
+// about exactly one thing — `module` — and everything else has to stay
+// identical, or the two halves of the package would not be the same library.
+//
+// `composite` is off here (and with it `declaration`): the CJS pass owns the
+// project graph and emits the .d.ts files that both halves share. Emitting a
+// second, identical set under dist/esm would only give consumers two copies of
+// every type to disagree about.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2020",
+    "outDir": "dist/esm",
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false
+  }
+}

@@ -8,7 +8,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { checkNewPassword, checkPasswordConfirmation } from "@guisao-llc/gambit-account";
-import { DEFAULT_LABELS, ProfileClient, ProfileLabels } from "./types";
+import { DEFAULT_LABELS, ProfileClient, ProfileLabels } from "./types.js";
 
 /**
  * Change your own password.

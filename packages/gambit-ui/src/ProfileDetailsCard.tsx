@@ -9,7 +9,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { checkAvatarUpload } from "@guisao-llc/gambit-account";
-import { DEFAULT_LABELS, Profile, ProfileClient, ProfileLabels } from "./types";
+import { DEFAULT_LABELS, Profile, ProfileClient, ProfileLabels } from "./types.js";
 
 /**
  * Your name, phone and picture.

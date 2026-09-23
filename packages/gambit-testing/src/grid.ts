@@ -4,14 +4,14 @@ import {
   expectDeny403,
   expectAdjacentPermOutcome,
   HttpResponseLike,
-} from "./assertions";
+} from "./assertions.js";
 import {
   RouteEntry,
   entriesForPermission,
   pickAdjacentPerm,
   resolvePath,
   DEFAULT_PARAM_VALUES,
-} from "./manifest";
+} from "./manifest.js";
 
 /**
  * The per-permission grid.

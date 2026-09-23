@@ -1,6 +1,6 @@
 {
   "name": "@guisao-llc/gambit-person",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The person behind an account: the record they get, and the enrollment that creates their login and hands back a one-time link.",
   "license": "UNLICENSED",
   "repository": {
@@ -21,15 +21,32 @@
     "node": ">=20 <23"
   },
   "main": "dist/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./mongoose": {
+      "types": "./dist/mongoose.d.ts",
+      "import": "./dist/esm/mongoose.js",
+      "require": "./dist/mongoose.js",
+      "default": "./dist/mongoose.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b",
-    "clean": "tsc -b --clean",
+    "build": "tsc -b && npm run build:esm",
+    "clean": "tsc -b --clean && node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "test": "node --test test/*.test.js",
-    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs",
+    "build:esm": "tsc -p tsconfig.esm.json && node ../../scripts/mark-esm.mjs"
   },
   "peerDependencies": {
     "mongoose": ">=8"
@@ -41,17 +58,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./mongoose": {
-      "types": "./dist/mongoose.d.ts",
-      "default": "./dist/mongoose.js"
-    },
-    "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
