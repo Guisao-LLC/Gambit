@@ -1,0 +1,77 @@
+{
+  "name": "@guisao-llc/gambit-email",
+  "version": "0.1.0",
+  "description": "Transactional email: a provider-agnostic send context and a Google Workspace OAuth2 transport.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guisao-LLC/Gambit.git",
+    "directory": "packages/gambit-email"
+  },
+  "homepage": "https://github.com/Guisao-LLC/Gambit/tree/main/packages/gambit-email",
+  "keywords": [
+    "email",
+    "nodemailer",
+    "gmail",
+    "oauth2",
+    "transactional"
+  ],
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "main": "dist/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./google": {
+      "types": "./dist/google.d.ts",
+      "import": "./dist/esm/google.js",
+      "require": "./dist/google.js",
+      "default": "./dist/google.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b && npm run build:esm",
+    "build:esm": "tsc -p tsconfig.esm.json && node ../../scripts/mark-esm.mjs",
+    "clean": "tsc -b --clean && node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build && npm test && node ../../scripts/prepublish-check.mjs"
+  },
+  "peerDependencies": {
+    "googleapis": ">=148",
+    "nodemailer": ">=6"
+  },
+  "peerDependenciesMeta": {
+    "googleapis": {
+      "optional": true
+    },
+    "nodemailer": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.0",
+    "googleapis": "^148.0.0",
+    "nodemailer": "^8.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "typesVersions": {
+    "*": {
+      "google": [
+        "dist/google.d.ts"
+      ]
+    }
+  }
+}

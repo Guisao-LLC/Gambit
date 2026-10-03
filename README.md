@@ -21,6 +21,7 @@ packages/
   gambit-account/     what an account IS — fields, password and avatar rules
   gambit-person/      who holds one — the person record, and enrolling them
   gambit-settings/    app settings with typed defaults
+  gambit-email/       sending a message — the context and the transport
   gambit-testing/     the RBAC route grid every consuming app runs
   gambit-ui/          React panels built on the rules above
   create-gambit-app/  the generator that starts a new app with all of it
@@ -35,8 +36,16 @@ separate themselves. An account is a **credential**; a person is **who holds
 it**. An app has accounts with no person behind them — a service account, a
 seed administrator — and people who do not have an account yet.
 
-Still staged for extraction and unpackaged: `email`, `events`, `change-log`,
-`data`, `ai`, `diagnostics`.
+`gambit-email` stops at "deliver this message". The branded shell, the
+templates and the CC list stay in the apps, because those are the parts that
+make an email look like it came from a particular one. Its Google Workspace
+transport lives behind the `/google` subpath, for the same reason the Mongoose
+schema fragments do: `googleapis` is ~100MB installed, and an app that wants
+the send context with its own transport should not pay for the Gmail API to
+get it.
+
+Still staged for extraction and unpackaged: `events`, `change-log`, `data`,
+`ai`, `diagnostics`.
 
 ## Install
 

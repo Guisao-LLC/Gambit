@@ -26,6 +26,9 @@
       "path": "packages/gambit-ui"
     },
     {
+      "path": "packages/gambit-email"
+    },
+    {
       "path": "packages/create-gambit-app"
     }
   ]

@@ -12,8 +12,9 @@ Three of the prerequisites are done (below). What is left:
 generated app…". Repackaging on top of an unexercised path means a later break
 is ambiguous — you would not know whether the merge caused it.
 
-**Decide whether the staged six are in or out.** `email` and `ai` bring
-`nodemailer` and `googleapis`; `googleapis` alone is ~100MB installed. After a
+**Decide whether the staged five are in or out.** `ai` brings its own SDK, and
+`gambit-email` already shows the shape of the answer: it ships, but its heavy
+transport sits behind a `/google` subpath so the root costs nothing. After a
 `1.0` that boundary is expensive to move, which is the whole reason `1.0` is the
 revisit point.
 
@@ -82,9 +83,10 @@ platform-bound are now shims with legitimate app coupling — `permission-cache`
 imports the app's `Roles`, `roles-model` declares its tenant. It passes, so
 nothing is broken; it is describing an older arrangement.
 
-**Six modules are still staged for extraction and unpackaged**: `email`,
-`events`, `change-log`, `data`, `ai`, `diagnostics`. All are leaf nodes except
-`data` and `ai`, which depend on `auth`, so any order works.
+**Five modules are still staged for extraction and unpackaged**: `events`,
+`change-log`, `data`, `ai`, `diagnostics`. All are leaf nodes except `data` and
+`ai`, which depend on `auth`, so any order works. (`email` came out at
+`gambit-email@0.1.0` when a second app needed to send.)
 
 **`gambit-person@0.1.0` is published and fully adopted** (quick 260904-nf1).
 Every account-creation path in both apps runs through `createEnrollment`, and
